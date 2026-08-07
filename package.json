@@ -1,0 +1,13 @@
+{
+  "name": "kaboom-karts",
+  "private": true,
+  "type": "module",
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "dev:client": "npm --workspace client run dev",
+    "dev:server": "npm --workspace server run dev",
+    "build": "npm run build --workspaces",
+    "test": "npm --workspace server test",
+    "typecheck": "npm run typecheck --workspaces"
+  }
+}

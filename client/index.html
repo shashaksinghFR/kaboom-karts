@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Kaboom Karts - Pure Skill 3D Multiplayer Kart Battle Arena" />
+    <title>Kaboom Karts | 3D Multiplayer Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- 3D Babylon.js Canvas -->
+      <canvas id="renderCanvas" touch-action="none"></canvas>
+
+      <!-- VIEW 1: Clean Futuristic Landing Home Page -->
+      <div id="home-view" class="overlay-screen active-screen">
+        <div class="home-backdrop"></div>
+        
+        <div class="home-container">
+          <!-- Top Navigation Brand -->
+          <nav class="home-nav">
+            <div class="brand-badge-large">
+              <span class="brand-dot"></span>
+              <span class="brand-title-large">KABOOM KARTS</span>
+              <span class="brand-tag">ARENA</span>
+            </div>
+            
+            <div class="nav-right-cluster">
+              <button id="home-control-toggle" class="control-badge-btn" title="Switch Controls (Keyboard / Phone Joystick)">
+                <span class="control-dot"></span>
+                <span id="home-control-text">PC KEYBOARD</span>
+              </button>
+              <div class="badge-multiplayer">10-PLAYER MULTIPLAYER</div>
+            </div>
+          </nav>
+
+          <!-- Main Hero Content -->
+          <main class="home-hero">
+            <div class="hero-left">
+              <h1 class="hero-heading">PURE SKILL.<br /><span class="hero-highlight">ONE WEAPON.</span><br />ZERO EXCUSES.</h1>
+              <p class="hero-description">
+                Experience high-octane 3D kart battle arena combat with full jumping ramps and synthwave neon physics. Every racer is equipped with the exact same weapon: a precision plasma missile with a 3-second cooldown.
+              </p>
+
+              <div class="feature-pills">
+                <div class="feature-pill">
+                  <span class="pill-tag">CAPACITY</span>
+                  <span>10 Players Max</span>
+                </div>
+                <div class="feature-pill">
+                  <span class="pill-tag">RAMPS</span>
+                  <span>Air-Time Jump Ramps</span>
+                </div>
+                <div class="feature-pill">
+                  <span class="pill-tag">CONTROLS</span>
+                  <span>PC + Mobile Joystick</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Center Action Card -->
+            <div class="hero-right">
+              <div class="action-card">
+                <div class="card-header">
+                  <h2 class="card-title">ENTER THE ARENA</h2>
+                  <p class="card-subtitle">Choose your pilot callsign to battle</p>
+                </div>
+
+                <div class="input-group">
+                  <label for="player-name-input" class="input-label">PILOT CALLSIGN</label>
+                  <input
+                    id="player-name-input"
+                    type="text"
+                    maxlength="16"
+                    placeholder="Enter pilot name..."
+                    value="AeroRacer"
+                    autocomplete="off"
+                    class="futuristic-input"
+                  />
+                </div>
+
+                <div class="action-buttons">
+                  <button id="btn-create-room" class="btn-primary">
+                    <span>CREATE ROOM</span>
+                  </button>
+
+                  <div class="divider-wrap">
+                    <div class="divider-line"></div>
+                    <span class="divider-text">OR JOIN ROOM</span>
+                    <div class="divider-line"></div>
+                  </div>
+
+                  <div class="join-row">
+                    <input
+                      id="room-code-input"
+                      type="text"
+                      maxlength="6"
+                      placeholder="ROOM CODE"
+                      autocomplete="off"
+                      class="futuristic-input code-input"
+                    />
+                    <button id="btn-join-room" class="btn-secondary">
+                      <span>JOIN</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Toast / Error Message -->
+                <div id="home-error-msg" class="error-msg-banner" style="display: none;"></div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+
+      <!-- VIEW 2: 10-Slot Room Lobby Interface -->
+      <div id="lobby-view" class="overlay-screen" style="display: none;">
+        <div class="lobby-backdrop"></div>
+
+        <div class="lobby-container">
+          <!-- Lobby Header -->
+          <header class="lobby-header">
+            <div class="lobby-info">
+              <div class="lobby-title-wrap">
+                <h1 class="lobby-title">BATTLE LOBBY</h1>
+                <div id="player-count-chip" class="count-chip">1 / 10 PLAYERS</div>
+              </div>
+              <p class="lobby-subtitle">Waiting for racers to join. Minimum 2 players required to launch match.</p>
+            </div>
+
+            <!-- Room Code Card -->
+            <div class="room-code-badge">
+              <span class="code-label">ROOM CODE</span>
+              <span id="display-room-code" class="code-value">------</span>
+              <button id="btn-copy-code" class="btn-copy" title="Copy room code">
+                <span>COPY</span>
+              </button>
+            </div>
+          </header>
+
+          <!-- 10-Player Slots Grid (2x5) -->
+          <div id="slots-grid" class="slots-grid">
+            <!-- Dynamically populated 10 slots without emojis -->
+          </div>
+
+          <!-- Lobby Action Footer -->
+          <footer class="lobby-footer">
+            <button id="btn-leave-room" class="btn-danger">
+              <span>LEAVE ROOM</span>
+            </button>
+
+            <div class="footer-right-actions">
+              <button id="btn-toggle-ready" class="btn-secondary btn-ready-toggle">
+                <span>READY UP</span>
+              </button>
+
+              <button id="btn-start-game" class="btn-primary btn-start-match" disabled>
+                <span>START GAME (MIN 2)</span>
+              </button>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+      <!-- VIEW 3: In-Game Battle HUD Overlay -->
+      <div id="ui-overlay" class="ui-layer" style="display: none;">
+        <!-- Top Header -->
+        <header class="hud-header">
+          <div class="brand-badge">
+            <span class="brand-dot"></span>
+            <span class="brand-title">KABOOM KARTS</span>
+            <span id="hud-room-code-tag" class="brand-version">ROOM</span>
+          </div>
+
+          <div class="top-stats">
+            <!-- Weapon Cooldown Badge -->
+            <div id="weapon-status-badge" class="weapon-badge ready">
+              <span id="weapon-status-text" class="weapon-text">MISSILE READY</span>
+              <div class="weapon-cooldown-bar">
+                <div id="weapon-cooldown-fill" class="weapon-cooldown-fill" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <button id="hud-control-toggle" class="hud-btn" title="Toggle Controls (Keyboard / Phone Joystick)">
+              <span id="hud-control-text">CONTROLS: PC</span>
+            </button>
+
+            <button id="cam-toggle-btn" class="hud-btn" title="Toggle Camera View (Shortcut: C)">
+              <span id="cam-mode-text">CHASE CAM</span>
+            </button>
+
+            <div class="stats-pill">
+              <span class="stats-label">FPS</span>
+              <span id="fps-display" class="stats-value">--</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Live Scoreboard / Roster (Top Left) -->
+        <div id="hud-scoreboard" class="hud-scoreboard">
+          <div class="scoreboard-title">ARENA RACERS</div>
+          <div id="scoreboard-list" class="scoreboard-list"></div>
+        </div>
+
+        <!-- 5-Second Match Countdown Overlay (Center Screen) -->
+        <div id="countdown-overlay" class="countdown-overlay" style="display: none;">
+          <div class="countdown-subtext">MATCH STARTING IN</div>
+          <div id="countdown-number" class="countdown-number">5</div>
+        </div>
+
+        <!-- Speedometer & Driving Gauges (Bottom Right on PC, or integrated with touch) -->
+        <div class="hud-speedometer">
+          <div class="speed-number-wrap">
+            <span id="speed-display" class="speed-value">0</span>
+            <span class="speed-unit">KM/H</span>
+          </div>
+          <div class="speed-indicators">
+            <span id="drift-indicator" class="indicator-badge">DRIFT</span>
+            <span id="boost-indicator" class="indicator-badge">BOOST</span>
+          </div>
+        </div>
+
+        <!-- MOBILE / TOUCH SCREEN CONTROLLER -->
+        <div id="touch-controls" class="touch-layer" style="display: none;">
+          <!-- Left: Virtual Analog Thumbstick -->
+          <div id="joystick-zone" class="joystick-container">
+            <div id="joystick-base" class="joystick-base">
+              <div id="joystick-thumb" class="joystick-thumb"></div>
+            </div>
+            <span class="joystick-label">STEER / DRIVE</span>
+          </div>
+
+          <!-- Right: Touch Action Buttons -->
+          <div class="touch-actions-cluster">
+            <div class="touch-secondary-row">
+              <button id="btn-touch-cam" class="btn-touch-circle btn-touch-small" title="Toggle Cam">
+                <span>CAM</span>
+              </button>
+              <button id="btn-touch-boost" class="btn-touch-circle btn-touch-boost" title="Boost">
+                <span>BOOST</span>
+              </button>
+              <button id="btn-touch-drift" class="btn-touch-circle btn-touch-drift" title="Drift">
+                <span>DRIFT</span>
+              </button>
+            </div>
+
+            <!-- Big Main Fire Button -->
+            <button id="btn-touch-fire" class="btn-touch-circle btn-touch-fire" title="Fire Missile">
+              <span class="touch-fire-text">FIRE</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: Match Over Victory Modal -->
+      <div id="gameover-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+          <div class="winner-trophy-badge">WINNER</div>
+          <h2 class="modal-title">VICTORY</h2>
+          <div id="winner-name-banner" class="winner-banner">Player One</div>
+          <p class="modal-subtitle">Dominated the Kaboom Karts Arena!</p>
+          <div class="modal-actions">
+            <button id="btn-return-lobby" class="btn-primary">
+              <span>RETURN TO LOBBY</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

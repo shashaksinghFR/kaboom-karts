@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: kaboom-karts
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start --workspace server
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
