@@ -8,6 +8,8 @@ export class LobbyUI {
   private gameoverModal: HTMLElement | null;
   private countdownOverlay: HTMLElement | null;
   private countdownNumber: HTMLElement | null;
+  private landscapePrompt: HTMLElement | null;
+  private btnDismissLandscape: HTMLElement | null;
 
   // Home Screen Elements
   private playerNameInput: HTMLInputElement | null;
@@ -26,7 +28,11 @@ export class LobbyUI {
   private btnStartGame: HTMLButtonElement | null;
 
   // Game Over Elements
+  private gameoverCard: HTMLElement | null;
+  private gameoverBadge: HTMLElement | null;
+  private gameoverTitle: HTMLElement | null;
   private winnerNameBanner: HTMLElement | null;
+  private gameoverSubtitle: HTMLElement | null;
   private btnReturnLobby: HTMLButtonElement | null;
 
   // Callbacks
@@ -47,6 +53,8 @@ export class LobbyUI {
     this.gameoverModal = document.getElementById("gameover-modal");
     this.countdownOverlay = document.getElementById("countdown-overlay");
     this.countdownNumber = document.getElementById("countdown-number");
+    this.landscapePrompt = document.getElementById("landscape-prompt");
+    this.btnDismissLandscape = document.getElementById("btn-dismiss-landscape");
 
     this.playerNameInput = document.getElementById("player-name-input") as HTMLInputElement;
     this.roomCodeInput = document.getElementById("room-code-input") as HTMLInputElement;
@@ -62,10 +70,17 @@ export class LobbyUI {
     this.btnToggleReady = document.getElementById("btn-toggle-ready") as HTMLButtonElement;
     this.btnStartGame = document.getElementById("btn-start-game") as HTMLButtonElement;
 
+    this.gameoverCard = document.getElementById("gameover-card");
+    this.gameoverBadge = document.getElementById("gameover-badge");
+    this.gameoverTitle = document.getElementById("gameover-title");
     this.winnerNameBanner = document.getElementById("winner-name-banner");
+    this.gameoverSubtitle = document.getElementById("gameover-subtitle");
     this.btnReturnLobby = document.getElementById("btn-return-lobby") as HTMLButtonElement;
 
     this.setupListeners();
+    this.checkOrientation();
+    window.addEventListener("resize", () => this.checkOrientation());
+    window.addEventListener("orientationchange", () => this.checkOrientation());
   }
 
   private setupListeners(): void {
@@ -117,6 +132,25 @@ export class LobbyUI {
     this.btnReturnLobby?.addEventListener("click", () => {
       this.onReturnToLobbyCallback?.();
     });
+
+    this.btnDismissLandscape?.addEventListener("click", () => {
+      if (this.landscapePrompt) {
+        this.landscapePrompt.style.display = "none";
+      }
+    });
+  }
+
+  private checkOrientation(): void {
+    const isMobile = window.innerWidth <= 820 || "ontouchstart" in window;
+    const isPortrait = window.innerHeight > window.innerWidth;
+
+    if (this.landscapePrompt) {
+      if (isMobile && isPortrait) {
+        this.landscapePrompt.style.display = "flex";
+      } else {
+        this.landscapePrompt.style.display = "none";
+      }
+    }
   }
 
   public getPlayerName(): string {
@@ -172,10 +206,30 @@ export class LobbyUI {
     }
   }
 
-  public showVictory(winnerName: string): void {
-    if (this.winnerNameBanner) {
-      this.winnerNameBanner.textContent = winnerName;
+  // Only the winner sees VICTORY; everyone else sees DEFEAT
+  public showMatchResult(winnerName: string, isLocalWinner: boolean): void {
+    if (this.gameoverCard) {
+      this.gameoverCard.className = `modal-card ${isLocalWinner ? "victory" : "defeat"}`;
     }
+
+    if (this.gameoverBadge) {
+      this.gameoverBadge.textContent = isLocalWinner ? "CHAMPION" : "MATCH ENDED";
+    }
+
+    if (this.gameoverTitle) {
+      this.gameoverTitle.textContent = isLocalWinner ? "VICTORY" : "DEFEAT";
+    }
+
+    if (this.winnerNameBanner) {
+      this.winnerNameBanner.textContent = isLocalWinner ? "YOU WON THE MATCH!" : `${winnerName} WON`;
+    }
+
+    if (this.gameoverSubtitle) {
+      this.gameoverSubtitle.textContent = isLocalWinner
+        ? "You obliterated all rivals in the Cyberpunk Arena!"
+        : `Eliminated from the arena. Better luck in the next round!`;
+    }
+
     this.showScreen("gameover");
   }
 
@@ -200,7 +254,7 @@ export class LobbyUI {
       slotMap.set(player.slotIndex, player);
     });
 
-    // Render 10 slots with clean typography and tags (no emojis)
+    // Render 10 slots cleanly
     let slotsHtml = "";
 
     for (let slot = 0; slot < 10; slot++) {

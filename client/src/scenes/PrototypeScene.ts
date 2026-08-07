@@ -2,6 +2,7 @@ import {
   Scene,
   HemisphericLight,
   DirectionalLight,
+  PointLight,
   MeshBuilder,
   StandardMaterial,
   Color3,
@@ -12,7 +13,7 @@ import {
 } from "@babylonjs/core";
 import { GameEngine } from "../core/Engine";
 import { KartVisual } from "../entities/KartVisual";
-import { KartController, RampZone } from "../entities/KartController";
+import { KartController } from "../entities/KartController";
 import { WeaponSystem } from "../entities/WeaponSystem";
 import { RemoteKartManager } from "../entities/RemoteKartManager";
 import { CameraController } from "./CameraController";
@@ -51,331 +52,291 @@ export class PrototypeScene {
     const canvas = gameEngine.getCanvas();
 
     this.scene = new Scene(rawEngine);
-    this.scene.clearColor = new Color3(0.06, 0.02, 0.12).toColor4(1.0);
+    this.scene.clearColor = new Color3(0.04, 0.05, 0.10).toColor4(1.0);
 
-    // Subtle atmospheric synthwave fog for distance depth
+    // Subtle atmospheric distance haze
     this.scene.fogMode = Scene.FOGMODE_EXP;
-    this.scene.fogDensity = 0.0032;
-    this.scene.fogColor = new Color3(0.42, 0.08, 0.38);
+    this.scene.fogDensity = 0.0028;
+    this.scene.fogColor = new Color3(0.12, 0.06, 0.22);
 
-    // 1. Setup High-Contrast Synthwave Lighting
+    // 1. High-Contrast Cyberpunk Stadium Lighting
     const hemiLight = new HemisphericLight(
-      "SynthwaveHemiLight",
+      "StadiumHemiLight",
       new Vector3(0, 1, 0),
       this.scene
     );
-    hemiLight.intensity = 1.3;
-    hemiLight.diffuse = new Color3(0.92, 0.72, 1.0); // Warm radiant ambient
-    hemiLight.groundColor = new Color3(0.24, 0.08, 0.36); // Indigo bounce
+    hemiLight.intensity = 1.45;
+    hemiLight.diffuse = new Color3(0.85, 0.92, 1.0); // Bright white/cyan arena light
+    hemiLight.groundColor = new Color3(0.25, 0.08, 0.32); // Deep magenta bounce
 
-    const dirLight = new DirectionalLight(
-      "SunDirectionalLight",
-      new Vector3(-0.5, -0.85, -0.4).normalize(),
+    const stadiumFloodLight = new DirectionalLight(
+      "StadiumFloodLight",
+      new Vector3(-0.4, -0.9, -0.3).normalize(),
       this.scene
     );
-    dirLight.position = new Vector3(60, 100, 50);
-    dirLight.intensity = 1.6;
-    dirLight.diffuse = new Color3(1.0, 0.88, 0.95);
+    stadiumFloodLight.position = new Vector3(50, 120, 50);
+    stadiumFloodLight.intensity = 1.8;
+    stadiumFloodLight.diffuse = new Color3(0.95, 0.98, 1.0);
 
-    // High-performance PCF Shadow Generator (No heavy blur kernels)
-    this.shadowGenerator = new ShadowGenerator(1024, dirLight);
+    // High-performance PCF Shadow Generator
+    this.shadowGenerator = new ShadowGenerator(1024, stadiumFloodLight);
     this.shadowGenerator.usePercentageCloserFiltering = true;
     this.shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
 
-    // 2. Setup Synthwave Neon Grid Arena & Sunset Skybox
-    this.setupSynthwaveArena();
+    // 2. Build Futuristic Cyberpunk Stadium Arena
+    this.setupCyberpunkStadiumArena();
 
-    // 3. Setup Jump Ramps & Physics Zones
-    this.setupJumpRamps();
-
-    // 4. Initialize Kart Visual & Controller
+    // 3. Initialize Kart Visual & Controller
     this.kartVisual = new KartVisual(this.scene, this.shadowGenerator);
     this.kartController = new KartController(this.kartVisual);
 
-    // 5. Initialize Remote Opponents Manager
+    // 4. Initialize Remote Opponents Manager
     this.remoteKartManager = new RemoteKartManager(this.scene, this.shadowGenerator);
 
-    // 6. Initialize Modular Weapon System with 3.0s cooldown
+    // 5. Initialize Weapon System
     this.weaponSystem = new WeaponSystem(this.scene, 3.0);
 
-    // Asynchronously load the GLB model
+    // Load Model
     this.kartVisual.loadModel("/models/hoveringcar.glb");
 
-    // 7. Initialize Camera Controller
+    // 6. Initialize Camera Controller
     this.cameraController = new CameraController(this.scene, canvas);
   }
 
   public setSpawnTransform(x: number, y: number, z: number, yaw: number): void {
-    this.kartController.position.set(x, y, z);
+    this.kartController.position.set(x, 0.5, z);
     this.kartController.yaw = yaw;
     this.kartController.forwardSpeed = 0;
     this.kartController.lateralVelocity = 0;
-    this.kartController.verticalVelocity = 0;
-    this.kartController.isAirborne = false;
-    this.kartVisual.rootNode.position.set(x, y, z);
+    this.kartVisual.rootNode.position.set(x, 0.5, z);
     this.kartVisual.rootNode.rotation.y = yaw;
   }
 
-  private setupSynthwaveArena(): void {
+  private setupCyberpunkStadiumArena(): void {
     const arenaSize = SCENE_CONFIG.DEFAULT_GROUND_SIZE; // 200m
-    const arenaRadius = (arenaSize * 0.95) / 2;
+    const arenaRadius = (arenaSize * 0.95) / 2; // ~95m
 
-    // A. Synthwave Sunset Horizon Sky Dome
+    // A. Skybox Dome with Distant Cyberpunk Night City & Stars
     const skyDome = MeshBuilder.CreateSphere(
-      "SynthwaveSkyDome",
-      { diameter: 380, segments: 24, slice: 0.5 },
+      "StadiumSkyDome",
+      { diameter: 390, segments: 24, slice: 0.5 },
       this.scene
     );
     skyDome.position.y = -10;
     skyDome.infiniteDistance = true;
 
-    const skyMat = new StandardMaterial("SkyDomeMat", this.scene);
+    const skyMat = new StandardMaterial("StadiumSkyMat", this.scene);
     skyMat.backFaceCulling = false;
     skyMat.disableLighting = true;
 
-    // Procedural Synthwave Sunset & Starfield Gradient
-    const skyTex = new DynamicTexture("SkyDomeTex", { width: 1024, height: 512 }, this.scene, false);
+    const skyTex = new DynamicTexture("StadiumSkyTex", { width: 1024, height: 512 }, this.scene, false);
     const sCtx = skyTex.getContext() as CanvasRenderingContext2D;
 
-    // Horizon Gradient (Dark Indigo Top -> Vibrant Purple Mid -> Glowing Hot Pink Horizon)
+    // Night Sky Gradient (Deep Obsidian to Violet Cyberpunk Horizon)
     const skyGrad = sCtx.createLinearGradient(0, 0, 0, 512);
-    skyGrad.addColorStop(0.0, "#05010d");
-    skyGrad.addColorStop(0.45, "#15042a");
-    skyGrad.addColorStop(0.72, "#4a0e4e");
-    skyGrad.addColorStop(0.88, "#9d1772");
-    skyGrad.addColorStop(1.0, "#ff2a85");
+    skyGrad.addColorStop(0.0, "#02040a");
+    skyGrad.addColorStop(0.55, "#080d22");
+    skyGrad.addColorStop(0.82, "#240a3d");
+    skyGrad.addColorStop(1.0, "#5e0b59");
     sCtx.fillStyle = skyGrad;
     sCtx.fillRect(0, 0, 1024, 512);
 
-    // Draw twinkling starfield in upper atmosphere
-    sCtx.fillStyle = "#ffffff";
-    for (let i = 0; i < 180; i++) {
-      const sx = Math.random() * 1024;
-      const sy = Math.random() * 320;
-      const sr = Math.random() * 1.5 + 0.5;
-      const sa = Math.random() * 0.8 + 0.2;
-      sCtx.globalAlpha = sa;
-      sCtx.beginPath();
-      sCtx.arc(sx, sy, sr, 0, Math.PI * 2);
-      sCtx.fill();
+    // Distant Cyber City Silhouette with glowing windows on the horizon
+    sCtx.fillStyle = "#060914";
+    for (let bx = 0; bx < 1024; bx += 32) {
+      const bHeight = 80 + Math.sin(bx * 0.05) * 45 + ((bx * 7) % 50);
+      const bWidth = 26 + (bx % 12);
+      sCtx.fillRect(bx, 512 - bHeight, bWidth, bHeight);
+
+      // Cyan / Magenta Lit Windows
+      sCtx.fillStyle = (bx % 64 === 0) ? "#ff007f" : "#00f0ff";
+      for (let wy = 512 - bHeight + 10; wy < 500; wy += 14) {
+        for (let wx = bx + 4; wx < bx + bWidth - 4; wx += 8) {
+          if (Math.random() > 0.35) {
+            sCtx.fillRect(wx, wy, 4, 6);
+          }
+        }
+      }
+      sCtx.fillStyle = "#060914";
     }
-    sCtx.globalAlpha = 1.0;
+
     skyTex.update();
     skyMat.emissiveTexture = skyTex;
     skyDome.material = skyMat;
 
-    // B. Synthwave Glowing Neon Grid Floor
+    // B. High-Gloss Reflective Wet Tarmac Stadium Floor
     const ground = MeshBuilder.CreateGround(
-      "SynthwaveGridFloor",
-      {
-        width: arenaSize,
-        height: arenaSize,
-        subdivisions: 4,
-      },
+      "ReflectiveStadiumFloor",
+      { width: arenaSize, height: arenaSize, subdivisions: 4 },
       this.scene
     );
 
-    const groundMat = new StandardMaterial("SynthwaveFloorMat", this.scene);
-    groundMat.diffuseColor = new Color3(0.08, 0.02, 0.16);
-    groundMat.specularColor = new Color3(0.65, 0.15, 0.55);
-    groundMat.specularPower = 64;
+    const groundMat = new StandardMaterial("GlossFloorMat", this.scene);
+    groundMat.diffuseColor = new Color3(0.06, 0.08, 0.14);
+    groundMat.specularColor = new Color3(0.9, 0.95, 1.0); // Intense wet gloss reflections
+    groundMat.specularPower = 128; // Sharp specular highlights
 
-    // Procedural Glowing Magenta & Pink Grid Texture
-    const gridTexture = new DynamicTexture("SynthwaveGridTex", 1024, this.scene, true);
-    const ctx = gridTexture.getContext() as CanvasRenderingContext2D;
+    // High resolution procedural stadium floor with concentric neon reflection rings
+    const groundTex = new DynamicTexture("GlossFloorTex", 1024, this.scene, true);
+    const gCtx = groundTex.getContext() as CanvasRenderingContext2D;
 
-    // Dark violet floor tiles
-    ctx.fillStyle = "#0c021a";
-    ctx.fillRect(0, 0, 1024, 1024);
+    // Dark sleek wet asphalt base
+    gCtx.fillStyle = "#080c18";
+    gCtx.fillRect(0, 0, 1024, 1024);
 
-    // Fine inner grid lines (Purple Glow)
-    ctx.strokeStyle = "rgba(168, 38, 178, 0.45)";
-    ctx.lineWidth = 2.0;
-    const subStep = 32;
-    for (let x = 0; x <= 1024; x += subStep) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 1024);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= 1024; y += subStep) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(1024, y);
-      ctx.stroke();
+    // Subtle dark grid tiles
+    gCtx.strokeStyle = "rgba(0, 240, 255, 0.08)";
+    gCtx.lineWidth = 1.5;
+    for (let p = 0; p <= 1024; p += 64) {
+      gCtx.beginPath();
+      gCtx.moveTo(p, 0);
+      gCtx.lineTo(p, 1024);
+      gCtx.stroke();
+      gCtx.beginPath();
+      gCtx.moveTo(0, p);
+      gCtx.lineTo(1024, p);
+      gCtx.stroke();
     }
 
-    // Major Neon Magenta Grid Lines
-    ctx.strokeStyle = "#ff2a85";
-    ctx.lineWidth = 4.5;
-    ctx.shadowColor = "rgba(255, 42, 133, 0.85)";
-    ctx.shadowBlur = 10;
-    const majorStep = 128;
-    for (let x = 0; x <= 1024; x += majorStep) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 1024);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= 1024; y += majorStep) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(1024, y);
-      ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
+    // Concentric Arena Glow Rings (Center Stage & Boundary)
+    gCtx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+    gCtx.lineWidth = 4;
+    gCtx.beginPath();
+    gCtx.arc(512, 512, 120, 0, Math.PI * 2);
+    gCtx.stroke();
 
-    gridTexture.update();
-    gridTexture.uScale = 8;
-    gridTexture.vScale = 8;
-    groundMat.diffuseTexture = gridTexture;
-    groundMat.emissiveColor = new Color3(0.06, 0.01, 0.08);
+    gCtx.strokeStyle = "rgba(255, 0, 128, 0.45)";
+    gCtx.lineWidth = 4;
+    gCtx.beginPath();
+    gCtx.arc(512, 512, 280, 0, Math.PI * 2);
+    gCtx.stroke();
+
+    gCtx.strokeStyle = "rgba(0, 240, 255, 0.7)";
+    gCtx.lineWidth = 8;
+    gCtx.beginPath();
+    gCtx.arc(512, 512, 470, 0, Math.PI * 2);
+    gCtx.stroke();
+
+    groundTex.update();
+    groundMat.diffuseTexture = groundTex;
+    groundMat.emissiveColor = new Color3(0.04, 0.05, 0.09);
 
     ground.material = groundMat;
     ground.receiveShadows = true;
 
-    // C. Glowing Arena Boundary Rails
-    const outerRing = MeshBuilder.CreateTorus(
-      "OuterBorderRing",
-      { diameter: arenaSize * 0.95, thickness: 0.5, tessellation: 64 },
+    // C. Multi-Tier Stadium Ribbon Stands & Canopy Structure
+    const cyanNeonMat = new StandardMaterial("CyanNeonRibbonMat", this.scene);
+    cyanNeonMat.diffuseColor = new Color3(0.0, 0.94, 1.0);
+    cyanNeonMat.emissiveColor = new Color3(0.0, 0.85, 1.0);
+
+    const magentaNeonMat = new StandardMaterial("MagentaNeonRibbonMat", this.scene);
+    magentaNeonMat.diffuseColor = new Color3(1.0, 0.0, 0.5);
+    magentaNeonMat.emissiveColor = new Color3(0.95, 0.0, 0.45);
+
+    const stadiumStructureMat = new StandardMaterial("StadiumStructMat", this.scene);
+    stadiumStructureMat.diffuseColor = new Color3(0.08, 0.11, 0.18);
+    stadiumStructureMat.specularColor = new Color3(0.4, 0.6, 0.8);
+    stadiumStructureMat.specularPower = 32;
+
+    // Tier 1: Lower Ground Ring (Cyan Ribbon at ground perimeter)
+    const tier1Ring = MeshBuilder.CreateTorus(
+      "StadiumTier1Ribbon",
+      { diameter: arenaRadius * 2, thickness: 0.5, tessellation: 72 },
       this.scene
     );
-    outerRing.position.y = 0.25;
-    const railMat = new StandardMaterial("BorderRailMat", this.scene);
-    railMat.diffuseColor = new Color3(0.9, 0.15, 0.55);
-    railMat.emissiveColor = new Color3(0.6, 0.08, 0.35);
-    outerRing.material = railMat;
+    tier1Ring.position.y = 0.35;
+    tier1Ring.material = cyanNeonMat;
 
-    const topNeonRail = MeshBuilder.CreateTorus(
-      "TopNeonRail",
-      { diameter: arenaSize * 0.95, thickness: 0.35, tessellation: 64 },
+    // Tier 2: Mid Grandstand Barrier & Ribbon (Magenta Ribbon)
+    const tier2Wall = MeshBuilder.CreateCylinder(
+      "StadiumTier2Wall",
+      { diameterTop: arenaRadius * 2 + 10, diameterBottom: arenaRadius * 2 + 2, height: 4.5, tessellation: 64 },
       this.scene
     );
-    topNeonRail.position.y = 2.2;
-    const neonRailMat = new StandardMaterial("TopNeonMat", this.scene);
-    neonRailMat.diffuseColor = new Color3(0.2, 0.8, 1.0);
-    neonRailMat.emissiveColor = new Color3(0.1, 0.65, 0.95);
-    topNeonRail.material = neonRailMat;
+    tier2Wall.position.y = 2.25;
+    tier2Wall.material = stadiumStructureMat;
+    tier2Wall.receiveShadows = true;
 
-    // D. 12 Synthwave Arena Boundary Obelisks
-    const pillarMat = new StandardMaterial("PillarMat", this.scene);
-    pillarMat.diffuseColor = new Color3(0.12, 0.04, 0.22);
-    pillarMat.specularColor = new Color3(0.7, 0.2, 0.6);
+    const tier2Ring = MeshBuilder.CreateTorus(
+      "StadiumTier2Ribbon",
+      { diameter: arenaRadius * 2 + 10, thickness: 0.6, tessellation: 72 },
+      this.scene
+    );
+    tier2Ring.position.y = 4.5;
+    tier2Ring.material = magentaNeonMat;
 
-    const pillarCount = 12;
-    for (let i = 0; i < pillarCount; i++) {
-      const ang = (i / pillarCount) * Math.PI * 2;
-      const px = Math.cos(ang) * arenaRadius;
-      const pz = Math.sin(ang) * arenaRadius;
+    // Tier 3: Upper Grandstand & Crowd Seating Ring
+    const tier3Wall = MeshBuilder.CreateCylinder(
+      "StadiumTier3Wall",
+      { diameterTop: arenaRadius * 2 + 26, diameterBottom: arenaRadius * 2 + 10, height: 7.0, tessellation: 64 },
+      this.scene
+    );
+    tier3Wall.position.y = 8.0;
+    tier3Wall.material = stadiumStructureMat;
+    tier3Wall.receiveShadows = true;
 
-      const pillar = MeshBuilder.CreateBox(
-        `SynthPillar_${i}`,
-        { width: 1.8, height: 4.0, depth: 1.8 },
+    const tier3Ring = MeshBuilder.CreateTorus(
+      "StadiumTier3Ribbon",
+      { diameter: arenaRadius * 2 + 26, thickness: 0.7, tessellation: 72 },
+      this.scene
+    );
+    tier3Ring.position.y = 11.5;
+    tier3Ring.material = cyanNeonMat;
+
+    // Tier 4: Grand Stadium Roof Canopy with Overhead Neon Arches
+    const stadiumRoofCanopy = MeshBuilder.CreateTorus(
+      "StadiumRoofCanopy",
+      { diameter: arenaRadius * 2 + 28, thickness: 3.2, tessellation: 72 },
+      this.scene
+    );
+    stadiumRoofCanopy.position.y = 17.5;
+    stadiumRoofCanopy.material = stadiumStructureMat;
+
+    const roofNeonRing = MeshBuilder.CreateTorus(
+      "RoofNeonMagentaRing",
+      { diameter: arenaRadius * 2 + 25, thickness: 0.9, tessellation: 72 },
+      this.scene
+    );
+    roofNeonRing.position.y = 18.0;
+    roofNeonRing.material = magentaNeonMat;
+
+    // D. 8 Stadium Floodlight Towers Beaming onto Field
+    const towerCount = 8;
+    for (let i = 0; i < towerCount; i++) {
+      const angle = (i / towerCount) * Math.PI * 2;
+      const tx = Math.cos(angle) * (arenaRadius + 6);
+      const tz = Math.sin(angle) * (arenaRadius + 6);
+
+      const pillar = MeshBuilder.CreateCylinder(
+        `StadiumPillar_${i}`,
+        { diameter: 2.2, height: 16.0, tessellation: 16 },
         this.scene
       );
-      pillar.position = new Vector3(px, 2.0, pz);
-      pillar.rotation.y = -ang;
-      pillar.material = pillarMat;
+      pillar.position = new Vector3(tx, 8.0, tz);
+      pillar.material = stadiumStructureMat;
       this.shadowGenerator.addShadowCaster(pillar);
-      pillar.receiveShadows = true;
 
-      // Neon Top Beacon
-      const beacon = MeshBuilder.CreateBox(
-        `Beacon_${i}`,
-        { width: 2.0, height: 0.4, depth: 2.0 },
+      // Floodlight Fixture Array
+      const lightArray = MeshBuilder.CreateBox(
+        `FloodFixture_${i}`,
+        { width: 3.5, height: 1.2, depth: 1.5 },
         this.scene
       );
-      beacon.position = new Vector3(px, 4.0, pz);
-      beacon.rotation.y = -ang;
-      beacon.material = railMat;
+      lightArray.position = new Vector3(tx, 16.0, tz);
+      lightArray.rotation.y = -angle;
+      lightArray.rotation.x = 0.35; // Aimed down into arena
+      lightArray.material = (i % 2 === 0) ? cyanNeonMat : magentaNeonMat;
+
+      // Real Point Light for Ground Reflections
+      const pointLight = new PointLight(
+        `StadiumPointLight_${i}`,
+        new Vector3(tx * 0.85, 4.0, tz * 0.85),
+        this.scene
+      );
+      pointLight.intensity = 0.65;
+      pointLight.diffuse = (i % 2 === 0) ? new Color3(0.0, 0.9, 1.0) : new Color3(1.0, 0.1, 0.6);
+      pointLight.range = 45;
     }
-  }
-
-  private setupJumpRamps(): void {
-    // 6 Jump Ramps positioned strategically around the arena
-    const rampConfigs: RampZone[] = [
-      // North Ramp (Facing South towards center)
-      { position: new Vector3(0, 0, 42), yaw: Math.PI, width: 6.5, length: 11.0, height: 3.4 },
-      // South Ramp (Facing North towards center)
-      { position: new Vector3(0, 0, -42), yaw: 0, width: 6.5, length: 11.0, height: 3.4 },
-      // East Ramp (Facing West towards center)
-      { position: new Vector3(42, 0, 0), yaw: -Math.PI / 2, width: 6.5, length: 11.0, height: 3.4 },
-      // West Ramp (Facing East towards center)
-      { position: new Vector3(-42, 0, 0), yaw: Math.PI / 2, width: 6.5, length: 11.0, height: 3.4 },
-      // Diagonal NE Ramp
-      { position: new Vector3(28, 0, 28), yaw: -Math.PI * 0.75, width: 6.5, length: 11.0, height: 3.4 },
-      // Diagonal SW Ramp
-      { position: new Vector3(-28, 0, -28), yaw: Math.PI * 0.25, width: 6.5, length: 11.0, height: 3.4 },
-    ];
-
-    // Store in controller for real-time physics detection
-    KartController.ramps = rampConfigs;
-
-    // Materials for ramps
-    const rampMat = new StandardMaterial("RampBodyMat", this.scene);
-    rampMat.diffuseColor = new Color3(0.14, 0.05, 0.26);
-    rampMat.specularColor = new Color3(0.8, 0.2, 0.7);
-
-    const rampEdgeMat = new StandardMaterial("RampEdgeMat", this.scene);
-    rampEdgeMat.diffuseColor = new Color3(1.0, 0.2, 0.6);
-    rampEdgeMat.emissiveColor = new Color3(0.9, 0.15, 0.55);
-
-    const rampArrowMat = new StandardMaterial("RampArrowMat", this.scene);
-    rampArrowMat.diffuseColor = new Color3(0.2, 0.9, 1.0);
-    rampArrowMat.emissiveColor = new Color3(0.1, 0.75, 0.95);
-
-    rampConfigs.forEach((cfg, idx) => {
-      const rampNode = new Mesh(`RampMeshNode_${idx}`, this.scene);
-      rampNode.position.copyFrom(cfg.position);
-      rampNode.rotation.y = cfg.yaw;
-
-      // Incline angle
-      const inclineAngle = -Math.atan2(cfg.height, cfg.length);
-
-      // Incline surface
-      const inclinePlane = MeshBuilder.CreateBox(
-        `RampIncline_${idx}`,
-        { width: cfg.width, height: 0.35, depth: cfg.length },
-        this.scene
-      );
-      inclinePlane.parent = rampNode;
-      inclinePlane.position = new Vector3(0, cfg.height / 2, 0);
-      inclinePlane.rotation.x = inclineAngle;
-      inclinePlane.material = rampMat;
-      this.shadowGenerator.addShadowCaster(inclinePlane);
-      inclinePlane.receiveShadows = true;
-
-      // Neon Guide Rails (Left & Right)
-      const leftRail = MeshBuilder.CreateBox(
-        `RampRailL_${idx}`,
-        { width: 0.35, height: 0.6, depth: cfg.length },
-        this.scene
-      );
-      leftRail.parent = rampNode;
-      leftRail.position = new Vector3(-cfg.width / 2, cfg.height / 2 + 0.2, 0);
-      leftRail.rotation.x = inclineAngle;
-      leftRail.material = rampEdgeMat;
-
-      const rightRail = MeshBuilder.CreateBox(
-        `RampRailR_${idx}`,
-        { width: 0.35, height: 0.6, depth: cfg.length },
-        this.scene
-      );
-      rightRail.parent = rampNode;
-      rightRail.position = new Vector3(cfg.width / 2, cfg.height / 2 + 0.2, 0);
-      rightRail.rotation.x = inclineAngle;
-      rightRail.material = rampEdgeMat;
-
-      // Crest Glow Strip (Launch Edge)
-      const crestStrip = MeshBuilder.CreateBox(
-        `RampCrest_${idx}`,
-        { width: cfg.width + 0.2, height: 0.45, depth: 0.45 },
-        this.scene
-      );
-      crestStrip.parent = rampNode;
-      crestStrip.position = new Vector3(0, cfg.height, cfg.length / 2);
-      crestStrip.material = rampArrowMat;
-    });
   }
 
   public update(deltaTime: number, inputManager: InputManager, isFrozen: boolean = false): void {
@@ -394,19 +355,18 @@ export class PrototypeScene {
       this.cameraController.toggleMode();
     }
 
-    // Update Kart Driving Physics, Ramps & Visuals
+    // Update Kart Driving Physics & Visuals
     this.kartController.update(deltaTime, input);
 
     // Physical Kart-to-Kart Collision Resolution
     this.resolveKartCollisions();
 
-    // Update Local Missile Weapon System (Firing + 3.0s Cooldown)
+    // Update Local Missile Weapon System
     const prevCount = this.weaponSystem.getActiveMissileCount();
     this.weaponSystem.update(deltaTime, input.fire, this.kartController);
     const newCount = this.weaponSystem.getActiveMissileCount();
 
     if (newCount > prevCount) {
-      // Missile was just fired! Broadcast over network
       const forwardHeading = this.kartController.yaw;
       const spawnPos = this.kartController.position.add(
         new Vector3(Math.sin(forwardHeading) * 1.75, 0.55, Math.cos(forwardHeading) * 1.75)
@@ -425,7 +385,6 @@ export class PrototypeScene {
     // Check missile hits on opponents
     const opponentTargets = this.remoteKartManager.getOpponentHitTargets();
     for (const target of opponentTargets) {
-      // Check proximity with local active missiles
       const hitMissileId = this.weaponSystem.checkCollision(target.position, target.radius);
       if (hitMissileId) {
         this.onLocalMissileHit?.({
@@ -438,13 +397,13 @@ export class PrototypeScene {
       }
     }
 
-    // Update Remote Opponents & Remote VFX
+    // Update Remote Opponents
     this.remoteKartManager.update(deltaTime);
 
     // Boost effect
     this.kartVisual.setBoostEffect(this.kartController.isBoosting);
 
-    // Update Chase/Orbit Camera
+    // Update Close Chase/Orbit Camera
     this.cameraController.update(deltaTime, this.kartController);
   }
 
@@ -480,7 +439,6 @@ export class PrototypeScene {
           this.kartController.lateralVelocity += (nx * 2.5);
         }
 
-        // Apply updated position immediately to mesh
         this.kartVisual.rootNode.position.copyFrom(localPos);
       }
     }

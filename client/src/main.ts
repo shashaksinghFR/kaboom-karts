@@ -4,8 +4,18 @@ import { InputManager } from "./input/InputManager";
 import { HudOverlay } from "./ui/HudOverlay";
 import { LobbyUI } from "./ui/LobbyUI";
 import { NetworkClient } from "./network/NetworkClient";
+import { soundManager } from "./audio/SoundManager";
 
 window.addEventListener("DOMContentLoaded", async () => {
+  // Unlock Web Audio API on first user interaction
+  const unlockAudio = () => {
+    soundManager.init();
+    window.removeEventListener("pointerdown", unlockAudio);
+    window.removeEventListener("keydown", unlockAudio);
+  };
+  window.addEventListener("pointerdown", unlockAudio);
+  window.addEventListener("keydown", unlockAudio);
+
   // 1. Initialize Canvas, Engine & Scene
   const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
   const engine = new GameEngine(canvas);
@@ -14,7 +24,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const lobbyUI = new LobbyUI();
   const networkClient = new NetworkClient();
 
-  // Create the 3D Battle Arena Scene
+  // Create the 3D Cyberpunk Grand Stadium Scene
   const prototypeScene = new PrototypeScene(engine);
   const rawScene = prototypeScene.getRawScene();
   engine.setScene(rawScene);
@@ -22,6 +32,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   let currentPhase: string = "lobby";
   let lastNetworkBroadcast = 0;
   let hasSetInitialSpawn = false;
+  let lastCountdownTick = -1;
 
   // Setup HUD Camera Mode Toggle
   hud.setCameraMode(prototypeScene.cameraController.getMode());
@@ -29,6 +40,25 @@ window.addEventListener("DOMContentLoaded", async () => {
     const nextMode = prototypeScene.cameraController.toggleMode();
     hud.setCameraMode(nextMode);
   });
+
+  // Setup Audio Toggle Handlers
+  const audioToggleBtn = document.getElementById("audio-toggle-btn");
+  const audioStatusText = document.getElementById("audio-status-text");
+  const hudAudioToggle = document.getElementById("hud-audio-toggle");
+  const hudAudioText = document.getElementById("hud-audio-text");
+
+  const syncAudioUI = (isMuted: boolean) => {
+    if (audioStatusText) audioStatusText.textContent = isMuted ? "AUDIO: OFF" : "AUDIO: ON";
+    if (hudAudioText) hudAudioText.textContent = isMuted ? "SOUND: OFF" : "SOUND: ON";
+  };
+
+  const handleAudioToggle = () => {
+    const isMuted = soundManager.toggleMute();
+    syncAudioUI(isMuted);
+  };
+
+  audioToggleBtn?.addEventListener("click", handleAudioToggle);
+  hudAudioToggle?.addEventListener("click", handleAudioToggle);
 
   // Setup Control Scheme Toggle (PC Keyboard vs Phone Joystick)
   const homeControlToggle = document.getElementById("home-control-toggle");
@@ -82,6 +112,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   lobbyUI.onLeaveRoomCallback = () => {
     networkClient.leaveRoom();
+    soundManager.stopBackgroundMusic();
     hasSetInitialSpawn = false;
   };
 
@@ -95,6 +126,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   lobbyUI.onReturnToLobbyCallback = () => {
     networkClient.sendRematch();
+    soundManager.stopBackgroundMusic();
     lobbyUI.showScreen("lobby");
   };
 
@@ -113,21 +145,32 @@ window.addEventListener("DOMContentLoaded", async () => {
         lobbyUI.showScreen("game");
         lobbyUI.showCountdown(state.countdownTimer);
         hasSetInitialSpawn = false;
+        lastCountdownTick = -1;
       } else if (newPhase === "playing") {
         lobbyUI.showScreen("game");
         lobbyUI.hideCountdown();
+        soundManager.playCountdown(0); // High GO! chime
+        soundManager.startBackgroundMusic(); // Start Cyber Synthwave Track
       } else if (newPhase === "lobby") {
         lobbyUI.showScreen("lobby");
         lobbyUI.hideCountdown();
+        soundManager.stopBackgroundMusic();
         hasSetInitialSpawn = false;
       } else if (newPhase === "gameover") {
-        lobbyUI.showVictory(state.winnerName || "Match Concluded");
+        soundManager.stopBackgroundMusic();
+        // Determine if local player won or was defeated
+        const isLocalWinner = state.winnerSessionId === networkClient.localSessionId;
+        lobbyUI.showMatchResult(state.winnerName || "Opponent", isLocalWinner);
       }
     }
 
-    // Active countdown tick
+    // Active countdown tick sound effect (5, 4, 3, 2, 1)
     if (newPhase === "countdown") {
       lobbyUI.showCountdown(state.countdownTimer);
+      if (state.countdownTimer !== lastCountdownTick && state.countdownTimer > 0) {
+        lastCountdownTick = state.countdownTimer;
+        soundManager.playCountdown(state.countdownTimer);
+      }
     }
 
     // Set local player's spawn transform & assigned trail color
@@ -152,22 +195,25 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   networkClient.onMissileExploded = (data) => {
     prototypeScene.remoteKartManager.handleMissileExploded(data);
+    soundManager.playExplosion();
   };
 
   networkClient.onError = (msg) => {
     lobbyUI.showError(msg);
   };
 
-  // 4. Connect Scene Weapon Broadcast to Server
+  // 4. Connect Scene Weapon Broadcast to Server & Sound
   prototypeScene.onLocalMissileFired = (data) => {
     networkClient.sendFireMissile(data);
+    soundManager.playShoot();
   };
 
   prototypeScene.onLocalMissileHit = (data) => {
     networkClient.sendMissileHit(data);
+    soundManager.playExplosion();
   };
 
-  // 5. Pre-Render Loop (Physics, Weapon, Prediction & Network Sync)
+  // 5. Pre-Render Loop (Physics, Sound Synth & Network Sync)
   rawScene.onBeforeRenderObservable.add(() => {
     const deltaTime = rawScene.getEngine().getDeltaTime() / 1000.0;
     const isFrozen = currentPhase === "countdown";
@@ -175,6 +221,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // Sync HUD Camera Mode
     hud.setCameraMode(prototypeScene.cameraController.getMode());
+
+    // Update Real-Time Procedural Engine & Drift Audio
+    if (currentPhase === "playing" || currentPhase === "countdown") {
+      const rawInput = inputManager.getInput();
+      const speedKph = prototypeScene.kartController.getSpeedKph();
+      const isAccel = rawInput.throttle > 0 && !isFrozen;
+      const isBraking = rawInput.throttle < 0;
+      const isDrifting = prototypeScene.kartController.isDrifting;
+      soundManager.updateEngine(speedKph, isAccel, isBraking, isDrifting);
+    }
 
     // Broadcast local kart transform to server at ~30Hz
     if (networkClient.room && (currentPhase === "playing" || currentPhase === "countdown")) {
@@ -216,5 +272,5 @@ window.addEventListener("DOMContentLoaded", async () => {
   // 7. Start Rendering Engine
   engine.start();
 
-  console.log("Kaboom Karts 10-player room multiplayer initialized!");
+  console.log("🏎️ Kaboom Karts Cyberpunk Grand Stadium initialized!");
 });

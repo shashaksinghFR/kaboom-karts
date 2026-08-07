@@ -19,14 +19,14 @@ export class CameraController {
   private chaseCamera: UniversalCamera;
   private currentMode: CameraMode = CameraMode.CHASE;
 
-  // Chase camera parameters
-  public distanceBehind: number = 7.5;
-  public heightAbove: number = 3.2;
-  public lookAheadOffset: number = 2.0;
-  public positionLerpSpeed: number = 10.0;
-  public rotationLerpSpeed: number = 12.0;
+  // Close-up arcade chase camera parameters
+  public distanceBehind: number = 4.8;  // Close to the car
+  public heightAbove: number = 2.1;     // Lower, dynamic angle
+  public lookAheadOffset: number = 3.2; // Forward perspective
+  public positionLerpSpeed: number = 14.0;
+  public rotationLerpSpeed: number = 14.0;
 
-  private currentCameraPos: Vector3 = new Vector3(0, 5, -10);
+  private currentCameraPos: Vector3 = new Vector3(0, 3, -6);
   private currentLookTarget: Vector3 = new Vector3(0, 1, 0);
 
   constructor(scene: Scene, canvas: HTMLCanvasElement) {
@@ -38,24 +38,24 @@ export class CameraController {
       "OrbitCamera",
       CAMERA_CONFIG.ALPHA,
       CAMERA_CONFIG.BETA,
-      CAMERA_CONFIG.RADIUS,
-      CAMERA_CONFIG.TARGET,
+      5.5,
+      new Vector3(0, 0.8, 0),
       this.scene
     );
-    this.orbitCamera.lowerRadiusLimit = CAMERA_CONFIG.LOWER_RADIUS_LIMIT;
-    this.orbitCamera.upperRadiusLimit = CAMERA_CONFIG.UPPER_RADIUS_LIMIT;
-    this.orbitCamera.lowerBetaLimit = CAMERA_CONFIG.LOWER_BETA_LIMIT;
-    this.orbitCamera.upperBetaLimit = CAMERA_CONFIG.UPPER_BETA_LIMIT;
+    this.orbitCamera.lowerRadiusLimit = 3.0;
+    this.orbitCamera.upperRadiusLimit = 16.0;
+    this.orbitCamera.lowerBetaLimit = 0.2;
+    this.orbitCamera.upperBetaLimit = Math.PI / 2.05;
 
-    // 2. Third-Person Chase Camera (for high-speed arcade driving)
+    // 2. Third-Person Chase Camera (close-up arcade view)
     this.chaseCamera = new UniversalCamera(
       "ChaseCamera",
-      new Vector3(0, 5, -10),
+      new Vector3(0, 3, -6),
       this.scene
     );
-    this.chaseCamera.fov = 0.85;
+    this.chaseCamera.fov = 0.90;
     this.chaseCamera.minZ = 0.1;
-    this.chaseCamera.maxZ = 300;
+    this.chaseCamera.maxZ = 400;
 
     // Default to Chase Camera
     this.setMode(CameraMode.CHASE);
@@ -92,11 +92,10 @@ export class CameraController {
     }
 
     // Chase Camera update:
-    // Compute target position behind kart based on kart's yaw
     const sinYaw = Math.sin(kart.yaw);
     const cosYaw = Math.cos(kart.yaw);
 
-    // Behind vector = (-sinYaw, 0, -cosYaw)
+    // Position tightly behind kart based on heading
     const desiredPos = new Vector3(
       kart.position.x - sinYaw * this.distanceBehind,
       kart.position.y + this.heightAbove,
@@ -106,7 +105,7 @@ export class CameraController {
     // Look ahead target: slightly ahead of the kart in facing direction
     const desiredLookTarget = new Vector3(
       kart.position.x + sinYaw * this.lookAheadOffset,
-      kart.position.y + 1.2,
+      kart.position.y + 0.9,
       kart.position.z + cosYaw * this.lookAheadOffset
     );
 
@@ -120,9 +119,9 @@ export class CameraController {
     this.chaseCamera.position.copyFrom(this.currentCameraPos);
     this.chaseCamera.setTarget(this.currentLookTarget);
 
-    // Dynamic FOV speed effect (widescreen high-speed rush)
+    // Dynamic FOV speed effect
     const speedRatio = Math.min(Math.abs(kart.forwardSpeed) / (kart.tuning.maxForwardSpeed * kart.tuning.boostMultiplier), 1.0);
-    const targetFov = 0.85 + speedRatio * 0.15;
-    this.chaseCamera.fov += (targetFov - this.chaseCamera.fov) * dt * 5;
+    const targetFov = 0.90 + speedRatio * 0.12;
+    this.chaseCamera.fov += (targetFov - this.chaseCamera.fov) * dt * 6;
   }
 }
