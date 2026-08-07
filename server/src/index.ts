@@ -30,7 +30,7 @@ app.use(
       ) {
         return callback(null, true);
       }
-      return callback(null, true); // Allow client connections
+      return callback(null, true);
     },
   })
 );
@@ -61,27 +61,46 @@ app.get("/rooms/:code", (req, res) => {
   return res.json({ roomId, roomCode: code });
 });
 
-// 4. Serve Client static assets if client/dist exists (Unified Production Deployment)
-const clientDistCandidates = [
+// 4. Robust Static Client Discovery across all build environments
+const candidatePaths = [
+  path.resolve(__dirname, "../../../../client/dist"),
   path.resolve(__dirname, "../../../client/dist"),
   path.resolve(__dirname, "../../client/dist"),
   path.resolve(__dirname, "../client/dist"),
   path.resolve(process.cwd(), "client/dist"),
+  path.resolve(process.cwd(), "../client/dist"),
+  path.resolve(process.cwd(), "../../client/dist"),
+  path.resolve("/opt/render/project/src/client/dist"),
 ];
 
 let clientDistPath: string | null = null;
-for (const cand of clientDistCandidates) {
-  if (fs.existsSync(cand) && fs.existsSync(path.join(cand, "index.html"))) {
-    clientDistPath = cand;
-    break;
-  }
+for (const cand of candidatePaths) {
+  try {
+    if (fs.existsSync(cand) && fs.existsSync(path.join(cand, "index.html"))) {
+      clientDistPath = cand;
+      break;
+    }
+  } catch (_e) {}
 }
 
 if (clientDistPath) {
-  console.log(`📦 Serving static client build from: ${clientDistPath}`);
-  app.use(express.static(clientDistPath));
-  app.get("*", (_req, res) => {
+  console.log(`📦 Found and serving client build from: ${clientDistPath}`);
+  app.use(express.static(clientDistPath, { index: "index.html" }));
+  
+  app.get("/", (_req, res) => {
     res.sendFile(path.join(clientDistPath!, "index.html"));
+  });
+
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/rooms") || req.path.startsWith("/health") || req.path.startsWith("/colyseus")) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath!, "index.html"));
+  });
+} else {
+  console.warn("⚠️ Client dist directory not found. Checked paths:", candidatePaths);
+  app.get("/", (_req, res) => {
+    res.send("<h1>🏎️ Kaboom Karts Server is Running</h1><p>Client build is initializing...</p>");
   });
 }
 
