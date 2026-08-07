@@ -2,12 +2,19 @@
   "name": "kaboom-karts",
   "private": true,
   "type": "module",
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev:client": "npm --workspace client run dev",
     "dev:server": "npm --workspace server run dev",
     "build": "npm run build --workspaces",
+    "start": "npm start --workspace server",
     "test": "npm --workspace server test",
     "typecheck": "npm run typecheck --workspaces"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
   }
 }

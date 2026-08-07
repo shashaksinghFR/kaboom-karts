@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ../node_modules/vite/bin/vite.js",
-    "build": "node ../node_modules/typescript/bin/tsc -b && node ../node_modules/vite/bin/vite.js build",
-    "typecheck": "node ../node_modules/typescript/bin/tsc -b"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@babylonjs/core": "^9.20.0",
