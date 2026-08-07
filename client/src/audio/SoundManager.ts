@@ -16,6 +16,7 @@ export class SoundManager {
   private engineOsc1: OscillatorNode | null = null;
   private engineOsc2: OscillatorNode | null = null;
   private engineGain: GainNode | null = null;
+  private engineFilter: BiquadFilterNode | null = null;
 
   // Drift Screech Node
   private driftNoiseGain: GainNode | null = null;
@@ -24,9 +25,7 @@ export class SoundManager {
   // Music loop timer
   private musicTimerId: number | null = null;
 
-  constructor() {
-    // SoundManager is lazily initialized on first user touch/interaction to comply with modern browser autoplay policies.
-  }
+  constructor() {}
 
   public init(): void {
     if (this.ctx) {
@@ -41,15 +40,15 @@ export class SoundManager {
       this.ctx = new AudioCtx();
 
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(0.85, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(0.75, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
 
       this.sfxGain = this.ctx.createGain();
-      this.sfxGain.gain.setValueAtTime(0.9, this.ctx.currentTime);
+      this.sfxGain.gain.setValueAtTime(0.75, this.ctx.currentTime);
       this.sfxGain.connect(this.masterGain);
 
       this.musicGain = this.ctx.createGain();
-      this.musicGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+      this.musicGain.gain.setValueAtTime(0.28, this.ctx.currentTime);
       this.musicGain.connect(this.masterGain);
 
       this.setupEngineSynth();
@@ -67,21 +66,22 @@ export class SoundManager {
     this.engineOsc2 = this.ctx.createOscillator();
     this.engineGain = this.ctx.createGain();
 
-    this.engineOsc1.type = "sawtooth";
+    this.engineOsc1.type = "sine";
     this.engineOsc2.type = "triangle";
 
-    this.engineOsc1.frequency.setValueAtTime(55, this.ctx.currentTime);
-    this.engineOsc2.frequency.setValueAtTime(110, this.ctx.currentTime);
+    this.engineOsc1.frequency.setValueAtTime(45, this.ctx.currentTime);
+    this.engineOsc2.frequency.setValueAtTime(90, this.ctx.currentTime);
 
+    // Initial soft whisper gain
     this.engineGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
 
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(450, this.ctx.currentTime);
+    this.engineFilter = this.ctx.createBiquadFilter();
+    this.engineFilter.type = "lowpass";
+    this.engineFilter.frequency.setValueAtTime(320, this.ctx.currentTime);
 
-    this.engineOsc1.connect(filter);
-    this.engineOsc2.connect(filter);
-    filter.connect(this.engineGain);
+    this.engineOsc1.connect(this.engineFilter);
+    this.engineOsc2.connect(this.engineFilter);
+    this.engineFilter.connect(this.engineGain);
     this.engineGain.connect(this.sfxGain);
 
     this.engineOsc1.start();
@@ -104,8 +104,8 @@ export class SoundManager {
 
     this.driftFilter = this.ctx.createBiquadFilter();
     this.driftFilter.type = "bandpass";
-    this.driftFilter.frequency.setValueAtTime(1200, this.ctx.currentTime);
-    this.driftFilter.Q.setValueAtTime(4.0, this.ctx.currentTime);
+    this.driftFilter.frequency.setValueAtTime(1000, this.ctx.currentTime);
+    this.driftFilter.Q.setValueAtTime(3.5, this.ctx.currentTime);
 
     this.driftNoiseGain = this.ctx.createGain();
     this.driftNoiseGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
@@ -117,26 +117,27 @@ export class SoundManager {
     whiteNoise.start();
   }
 
+  // Reduced volume and smooth electric tone for acceleration
   public updateEngine(speedKph: number, isAccelerating: boolean, isBraking: boolean, isDrifting: boolean): void {
     if (!this.ctx || !this.engineGain || !this.engineOsc1 || !this.engineOsc2) return;
 
     const now = this.ctx.currentTime;
     const speedRatio = Math.min(speedKph / 140, 1.0);
 
-    // Target Pitch based on speed & throttle
-    const baseFreq = 48 + speedRatio * 180 + (isAccelerating ? 30 : 0);
-    this.engineOsc1.frequency.setTargetAtTime(baseFreq, now, 0.08);
-    this.engineOsc2.frequency.setTargetAtTime(baseFreq * 1.5, now, 0.08);
+    // Smooth soft pitch curve
+    const baseFreq = 42 + speedRatio * 95 + (isAccelerating ? 15 : 0);
+    this.engineOsc1.frequency.setTargetAtTime(baseFreq, now, 0.1);
+    this.engineOsc2.frequency.setTargetAtTime(baseFreq * 1.5, now, 0.1);
 
-    // Volume level
-    const targetVol = 0.08 + speedRatio * 0.16 + (isAccelerating ? 0.08 : 0);
-    this.engineGain.gain.setTargetAtTime(targetVol, now, 0.06);
+    // Significantly reduced volume for smooth background engine hum
+    const targetVol = 0.018 + speedRatio * 0.035 + (isAccelerating ? 0.02 : 0);
+    this.engineGain.gain.setTargetAtTime(targetVol, now, 0.08);
 
     // Drift Screech Sound
     if (this.driftNoiseGain && this.driftFilter) {
       if (isDrifting && speedKph > 15) {
-        this.driftNoiseGain.gain.setTargetAtTime(0.18, now, 0.05);
-        this.driftFilter.frequency.setTargetAtTime(1200 + speedRatio * 800, now, 0.05);
+        this.driftNoiseGain.gain.setTargetAtTime(0.12, now, 0.05);
+        this.driftFilter.frequency.setTargetAtTime(1000 + speedRatio * 600, now, 0.05);
       } else {
         this.driftNoiseGain.gain.setTargetAtTime(0.0, now, 0.08);
       }
@@ -153,17 +154,17 @@ export class SoundManager {
     const gain = this.ctx.createGain();
 
     osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(880, now);
-    osc.frequency.exponentialRampToValueAtTime(120, now + 0.22);
+    osc.frequency.setValueAtTime(840, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.2);
 
-    gain.gain.setValueAtTime(0.35, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
     osc.connect(gain);
     gain.connect(this.sfxGain);
 
     osc.start(now);
-    osc.stop(now + 0.24);
+    osc.stop(now + 0.22);
   }
 
   // 2. Play Blast / Explosion Sound
@@ -177,24 +178,24 @@ export class SoundManager {
     const subOsc = this.ctx.createOscillator();
     const subGain = this.ctx.createGain();
     subOsc.type = "sine";
-    subOsc.frequency.setValueAtTime(160, now);
-    subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.5);
+    subOsc.frequency.setValueAtTime(150, now);
+    subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.45);
 
-    subGain.gain.setValueAtTime(0.65, now);
-    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    subGain.gain.setValueAtTime(0.55, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
     subOsc.connect(subGain);
     subGain.connect(this.sfxGain);
 
     subOsc.start(now);
-    subOsc.stop(now + 0.6);
+    subOsc.stop(now + 0.52);
 
     // Noise blast
-    const bufferSize = Math.floor(this.ctx.sampleRate * 0.45);
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.4);
     const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.12));
+      output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.1));
     }
 
     const noiseSource = this.ctx.createBufferSource();
@@ -202,12 +203,12 @@ export class SoundManager {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(1400, now);
-    filter.frequency.exponentialRampToValueAtTime(180, now + 0.45);
+    filter.frequency.setValueAtTime(1200, now);
+    filter.frequency.exponentialRampToValueAtTime(160, now + 0.4);
 
     const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.5, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    noiseGain.gain.setValueAtTime(0.4, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
 
     noiseSource.connect(filter);
     filter.connect(noiseGain);
@@ -229,18 +230,18 @@ export class SoundManager {
       // Countdown tick (480 Hz)
       osc.type = "sine";
       osc.frequency.setValueAtTime(480, now);
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
       osc.start(now);
-      osc.stop(now + 0.2);
+      osc.stop(now + 0.18);
     } else {
       // GO! Chime (960 Hz)
       osc.type = "triangle";
       osc.frequency.setValueAtTime(960, now);
-      gain.gain.setValueAtTime(0.55, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
       osc.start(now);
-      osc.stop(now + 0.52);
+      osc.stop(now + 0.48);
     }
 
     osc.connect(gain);
@@ -261,8 +262,8 @@ export class SoundManager {
     ];
 
     let noteIndex = 0;
-    const bpm = 128;
-    const stepTimeMs = (60 / bpm / 2) * 1000; // 16th notes
+    const bpm = 124;
+    const stepTimeMs = (60 / bpm / 2) * 1000;
 
     const playStep = () => {
       if (!this.isMusicPlaying || !this.ctx || !this.musicGain || this.isMuted) return;
@@ -277,9 +278,9 @@ export class SoundManager {
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(600 + Math.sin(noteIndex * 0.3) * 300, now);
+      filter.frequency.setValueAtTime(500 + Math.sin(noteIndex * 0.3) * 250, now);
 
-      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.setValueAtTime(0.09, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + (stepTimeMs / 1000) * 0.85);
 
       osc.connect(filter);
@@ -307,7 +308,7 @@ export class SoundManager {
   public toggleMute(): boolean {
     this.isMuted = !this.isMuted;
     if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 0.85, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 0.75, this.ctx.currentTime);
     }
     return this.isMuted;
   }

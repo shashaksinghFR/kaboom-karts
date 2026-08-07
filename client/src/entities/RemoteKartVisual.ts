@@ -41,6 +41,10 @@ export class RemoteKartVisual {
   private trailMaterial!: StandardMaterial;
   private trailsInitialized: boolean = false;
 
+  // Subtle Enemy Underglow Halo
+  private underglowMesh!: Mesh;
+  private underglowMat!: StandardMaterial;
+
   // Interpolation targets for smooth remote rendering
   public targetPosition: Vector3 = Vector3.Zero();
   public targetYaw: number = 0;
@@ -82,14 +86,58 @@ export class RemoteKartVisual {
     this.modelOffsetNode = new TransformNode("RemoteModelOffset", this.scene);
     this.modelOffsetNode.parent = this.visualMeshRoot;
 
-    // 5. Setup Tail Light Anchors & Trails
+    // 5. Setup Subtle Underglow Aura
+    this.setupSubtleGlow();
+
+    // 6. Setup Tail Light Anchors & Trails
     this.setupTailLightTrails();
 
-    // 6. Setup Clean Proportionate Nameplate
+    // 7. Setup Clean Proportionate Nameplate
     this.setupNameplate();
 
-    // 7. Load Model with original textures
+    // 8. Load Model with original textures + subtle glow enhancement
     this.loadModel();
+  }
+
+  private setupSubtleGlow(): void {
+    const playerColor = getPlayerColor(this.colorIndex);
+
+    // Create subtle underglow disc on the ground directly beneath kart
+    this.underglowMesh = MeshBuilder.CreateDisc(
+      `RemoteUnderglow_${this.playerName}`,
+      { radius: 1.85, tessellation: 32 },
+      this.scene
+    );
+    this.underglowMesh.parent = this.tiltNode;
+    this.underglowMesh.rotation.x = Math.PI / 2; // Flat on floor
+    this.underglowMesh.position.y = -0.38; // Hovering right above ground
+
+    this.underglowMat = new StandardMaterial(`RemoteUnderglowMat_${this.playerName}`, this.scene);
+    this.underglowMat.diffuseColor = playerColor.color3;
+    this.underglowMat.emissiveColor = playerColor.color3;
+    this.underglowMat.disableLighting = true;
+    this.underglowMat.alpha = 0.35;
+    this.underglowMat.backFaceCulling = false;
+
+    // Radial gradient glow texture
+    const glowTex = new DynamicTexture(
+      `UnderglowTex_${this.playerName}`,
+      256,
+      this.scene,
+      false
+    );
+    glowTex.hasAlpha = true;
+    const ctx = glowTex.getContext() as CanvasRenderingContext2D;
+    const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 128);
+    grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+    grad.addColorStop(0.45, "rgba(255, 255, 255, 0.45)");
+    grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 256);
+    glowTex.update();
+
+    this.underglowMat.opacityTexture = glowTex;
+    this.underglowMesh.material = this.underglowMat;
   }
 
   private setupTailLightTrails(): void {
@@ -106,7 +154,7 @@ export class RemoteKartVisual {
     this.trailMaterial.diffuseColor = playerColor.color3;
     this.trailMaterial.emissiveColor = playerColor.color3;
     this.trailMaterial.disableLighting = true;
-    this.trailMaterial.alpha = 0.4;
+    this.trailMaterial.alpha = 0.45;
     this.trailMaterial.backFaceCulling = false;
   }
 
@@ -145,7 +193,7 @@ export class RemoteKartVisual {
     );
     this.nameplateMesh.parent = this.rootNode;
     this.nameplateMesh.position.y = 1.6;
-    this.nameplateMesh.billboardMode = Mesh.BILLBOARDMODE_ALL; // Always faces camera
+    this.nameplateMesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
     // Matching 4:1 texture dimension (512 x 128)
     this.nameplateTexture = new DynamicTexture(
@@ -173,7 +221,7 @@ export class RemoteKartVisual {
     // 100% transparent background
     ctx.clearRect(0, 0, 512, 128);
 
-    // Sharp, crisp text with strong shadow for visibility over neon arena
+    // Sharp, crisp text with strong outline for visibility over bright arena
     ctx.font = "bold 44px 'Outfit', sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -219,15 +267,20 @@ export class RemoteKartVisual {
   }
 
   private enhanceModelMaterial(material: any): void {
+    const playerColor = getPlayerColor(this.colorIndex);
+
     if (material instanceof PBRMaterial) {
-      material.directIntensity = 1.35;
-      material.environmentIntensity = 1.2;
-      material.specularIntensity = 1.0;
+      material.directIntensity = 1.45;
+      material.environmentIntensity = 1.35;
+      material.specularIntensity = 1.1;
+      // Gentle subtle emissive tint based on player color
+      material.emissiveColor = playerColor.color3.scale(0.18);
       if (material.albedoTexture) {
         material.albedoTexture.hasAlpha = false;
       }
     } else if (material instanceof StandardMaterial) {
-      material.specularPower = 32;
+      material.specularPower = 48;
+      material.emissiveColor = playerColor.color3.scale(0.2);
     }
   }
 
@@ -311,6 +364,8 @@ export class RemoteKartVisual {
   public dispose(): void {
     if (this.leftTrailMesh) this.leftTrailMesh.dispose();
     if (this.rightTrailMesh) this.rightTrailMesh.dispose();
+    if (this.underglowMesh) this.underglowMesh.dispose();
+    if (this.underglowMat) this.underglowMat.dispose();
     this.nameplateMesh.dispose();
     this.nameplateTexture.dispose();
     this.meshes.forEach((m) => m.dispose());

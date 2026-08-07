@@ -9,7 +9,6 @@ import {
   Vector3,
   ShadowGenerator,
   DynamicTexture,
-  Mesh,
 } from "@babylonjs/core";
 import { GameEngine } from "../core/Engine";
 import { KartVisual } from "../entities/KartVisual";
@@ -52,22 +51,22 @@ export class PrototypeScene {
     const canvas = gameEngine.getCanvas();
 
     this.scene = new Scene(rawEngine);
-    this.scene.clearColor = new Color3(0.04, 0.05, 0.10).toColor4(1.0);
+    this.scene.clearColor = new Color3(0.12, 0.16, 0.28).toColor4(1.0);
 
-    // Subtle atmospheric distance haze
+    // Bright, crisp atmospheric haze
     this.scene.fogMode = Scene.FOGMODE_EXP;
-    this.scene.fogDensity = 0.0028;
-    this.scene.fogColor = new Color3(0.12, 0.06, 0.22);
+    this.scene.fogDensity = 0.0015;
+    this.scene.fogColor = new Color3(0.28, 0.34, 0.50);
 
-    // 1. High-Contrast Cyberpunk Stadium Lighting
+    // 1. High-Luminance Stadium Flood Lighting
     const hemiLight = new HemisphericLight(
       "StadiumHemiLight",
       new Vector3(0, 1, 0),
       this.scene
     );
-    hemiLight.intensity = 1.45;
-    hemiLight.diffuse = new Color3(0.85, 0.92, 1.0); // Bright white/cyan arena light
-    hemiLight.groundColor = new Color3(0.25, 0.08, 0.32); // Deep magenta bounce
+    hemiLight.intensity = 1.75;
+    hemiLight.diffuse = new Color3(1.0, 1.0, 1.0); // Bright white sunlight
+    hemiLight.groundColor = new Color3(0.65, 0.72, 0.85); // Light silver upward bounce
 
     const stadiumFloodLight = new DirectionalLight(
       "StadiumFloodLight",
@@ -75,16 +74,16 @@ export class PrototypeScene {
       this.scene
     );
     stadiumFloodLight.position = new Vector3(50, 120, 50);
-    stadiumFloodLight.intensity = 1.8;
-    stadiumFloodLight.diffuse = new Color3(0.95, 0.98, 1.0);
+    stadiumFloodLight.intensity = 2.1;
+    stadiumFloodLight.diffuse = new Color3(1.0, 1.0, 1.0);
 
     // High-performance PCF Shadow Generator
     this.shadowGenerator = new ShadowGenerator(1024, stadiumFloodLight);
     this.shadowGenerator.usePercentageCloserFiltering = true;
     this.shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
 
-    // 2. Build Futuristic Cyberpunk Stadium Arena
-    this.setupCyberpunkStadiumArena();
+    // 2. Build Bright Luminous Cyberpunk Stadium Arena
+    this.setupBrightStadiumArena();
 
     // 3. Initialize Kart Visual & Controller
     this.kartVisual = new KartVisual(this.scene, this.shadowGenerator);
@@ -112,11 +111,11 @@ export class PrototypeScene {
     this.kartVisual.rootNode.rotation.y = yaw;
   }
 
-  private setupCyberpunkStadiumArena(): void {
+  private setupBrightStadiumArena(): void {
     const arenaSize = SCENE_CONFIG.DEFAULT_GROUND_SIZE; // 200m
     const arenaRadius = (arenaSize * 0.95) / 2; // ~95m
 
-    // A. Skybox Dome with Distant Cyberpunk Night City & Stars
+    // A. Skybox Dome with Illuminated Cyber Skyline
     const skyDome = MeshBuilder.CreateSphere(
       "StadiumSkyDome",
       { diameter: 390, segments: 24, slice: 0.5 },
@@ -132,61 +131,62 @@ export class PrototypeScene {
     const skyTex = new DynamicTexture("StadiumSkyTex", { width: 1024, height: 512 }, this.scene, false);
     const sCtx = skyTex.getContext() as CanvasRenderingContext2D;
 
-    // Night Sky Gradient (Deep Obsidian to Violet Cyberpunk Horizon)
+    // Bright Twilight Horizon Gradient
     const skyGrad = sCtx.createLinearGradient(0, 0, 0, 512);
-    skyGrad.addColorStop(0.0, "#02040a");
-    skyGrad.addColorStop(0.55, "#080d22");
-    skyGrad.addColorStop(0.82, "#240a3d");
-    skyGrad.addColorStop(1.0, "#5e0b59");
+    skyGrad.addColorStop(0.0, "#0a1329");
+    skyGrad.addColorStop(0.55, "#182852");
+    skyGrad.addColorStop(0.85, "#3d2266");
+    skyGrad.addColorStop(1.0, "#851c72");
     sCtx.fillStyle = skyGrad;
     sCtx.fillRect(0, 0, 1024, 512);
 
-    // Distant Cyber City Silhouette with glowing windows on the horizon
-    sCtx.fillStyle = "#060914";
+    // Illuminated Cyber City Silhouette on Horizon
+    sCtx.fillStyle = "#121d38";
     for (let bx = 0; bx < 1024; bx += 32) {
       const bHeight = 80 + Math.sin(bx * 0.05) * 45 + ((bx * 7) % 50);
       const bWidth = 26 + (bx % 12);
       sCtx.fillRect(bx, 512 - bHeight, bWidth, bHeight);
 
-      // Cyan / Magenta Lit Windows
+      // Lit Windows
       sCtx.fillStyle = (bx % 64 === 0) ? "#ff007f" : "#00f0ff";
       for (let wy = 512 - bHeight + 10; wy < 500; wy += 14) {
         for (let wx = bx + 4; wx < bx + bWidth - 4; wx += 8) {
-          if (Math.random() > 0.35) {
+          if (Math.random() > 0.3) {
             sCtx.fillRect(wx, wy, 4, 6);
           }
         }
       }
-      sCtx.fillStyle = "#060914";
+      sCtx.fillStyle = "#121d38";
     }
 
     skyTex.update();
     skyMat.emissiveTexture = skyTex;
     skyDome.material = skyMat;
 
-    // B. High-Gloss Reflective Wet Tarmac Stadium Floor
+    // B. BRIGHT LIGHT-COLORED REFLECTIVE STADIUM FLOOR
     const ground = MeshBuilder.CreateGround(
       "ReflectiveStadiumFloor",
       { width: arenaSize, height: arenaSize, subdivisions: 4 },
       this.scene
     );
 
-    const groundMat = new StandardMaterial("GlossFloorMat", this.scene);
-    groundMat.diffuseColor = new Color3(0.06, 0.08, 0.14);
-    groundMat.specularColor = new Color3(0.9, 0.95, 1.0); // Intense wet gloss reflections
-    groundMat.specularPower = 128; // Sharp specular highlights
+    const groundMat = new StandardMaterial("LightFloorMat", this.scene);
+    groundMat.diffuseColor = new Color3(0.92, 0.94, 0.98); // Bright silver/white
+    groundMat.specularColor = new Color3(1.0, 1.0, 1.0); // Intense high-gloss reflections
+    groundMat.specularPower = 64;
+    groundMat.emissiveColor = new Color3(0.24, 0.28, 0.38); // Self-illuminated bright ground
 
-    // High resolution procedural stadium floor with concentric neon reflection rings
-    const groundTex = new DynamicTexture("GlossFloorTex", 1024, this.scene, true);
+    // High-resolution light titanium-silver procedural floor texture
+    const groundTex = new DynamicTexture("LightFloorTex", 1024, this.scene, true);
     const gCtx = groundTex.getContext() as CanvasRenderingContext2D;
 
-    // Dark sleek wet asphalt base
-    gCtx.fillStyle = "#080c18";
+    // Light silver-white titanium floor base
+    gCtx.fillStyle = "#e5edf8";
     gCtx.fillRect(0, 0, 1024, 1024);
 
-    // Subtle dark grid tiles
-    gCtx.strokeStyle = "rgba(0, 240, 255, 0.08)";
-    gCtx.lineWidth = 1.5;
+    // Subtle dark high-contrast cyber grid tiles
+    gCtx.strokeStyle = "rgba(40, 70, 120, 0.22)";
+    gCtx.lineWidth = 2.0;
     for (let p = 0; p <= 1024; p += 64) {
       gCtx.beginPath();
       gCtx.moveTo(p, 0);
@@ -198,28 +198,27 @@ export class PrototypeScene {
       gCtx.stroke();
     }
 
-    // Concentric Arena Glow Rings (Center Stage & Boundary)
-    gCtx.strokeStyle = "rgba(0, 240, 255, 0.4)";
-    gCtx.lineWidth = 4;
+    // Concentric Luminous Battle Arena Rings
+    gCtx.strokeStyle = "rgba(0, 180, 255, 0.85)";
+    gCtx.lineWidth = 6;
     gCtx.beginPath();
     gCtx.arc(512, 512, 120, 0, Math.PI * 2);
     gCtx.stroke();
 
-    gCtx.strokeStyle = "rgba(255, 0, 128, 0.45)";
-    gCtx.lineWidth = 4;
+    gCtx.strokeStyle = "rgba(255, 0, 128, 0.75)";
+    gCtx.lineWidth = 6;
     gCtx.beginPath();
     gCtx.arc(512, 512, 280, 0, Math.PI * 2);
     gCtx.stroke();
 
-    gCtx.strokeStyle = "rgba(0, 240, 255, 0.7)";
-    gCtx.lineWidth = 8;
+    gCtx.strokeStyle = "rgba(0, 200, 255, 0.95)";
+    gCtx.lineWidth = 10;
     gCtx.beginPath();
     gCtx.arc(512, 512, 470, 0, Math.PI * 2);
     gCtx.stroke();
 
     groundTex.update();
     groundMat.diffuseTexture = groundTex;
-    groundMat.emissiveColor = new Color3(0.04, 0.05, 0.09);
 
     ground.material = groundMat;
     ground.receiveShadows = true;
@@ -234,9 +233,9 @@ export class PrototypeScene {
     magentaNeonMat.emissiveColor = new Color3(0.95, 0.0, 0.45);
 
     const stadiumStructureMat = new StandardMaterial("StadiumStructMat", this.scene);
-    stadiumStructureMat.diffuseColor = new Color3(0.08, 0.11, 0.18);
-    stadiumStructureMat.specularColor = new Color3(0.4, 0.6, 0.8);
-    stadiumStructureMat.specularPower = 32;
+    stadiumStructureMat.diffuseColor = new Color3(0.18, 0.22, 0.32);
+    stadiumStructureMat.specularColor = new Color3(0.6, 0.75, 0.9);
+    stadiumStructureMat.specularPower = 48;
 
     // Tier 1: Lower Ground Ring (Cyan Ribbon at ground perimeter)
     const tier1Ring = MeshBuilder.CreateTorus(
@@ -324,7 +323,7 @@ export class PrototypeScene {
       );
       lightArray.position = new Vector3(tx, 16.0, tz);
       lightArray.rotation.y = -angle;
-      lightArray.rotation.x = 0.35; // Aimed down into arena
+      lightArray.rotation.x = 0.35;
       lightArray.material = (i % 2 === 0) ? cyanNeonMat : magentaNeonMat;
 
       // Real Point Light for Ground Reflections
@@ -333,9 +332,9 @@ export class PrototypeScene {
         new Vector3(tx * 0.85, 4.0, tz * 0.85),
         this.scene
       );
-      pointLight.intensity = 0.65;
-      pointLight.diffuse = (i % 2 === 0) ? new Color3(0.0, 0.9, 1.0) : new Color3(1.0, 0.1, 0.6);
-      pointLight.range = 45;
+      pointLight.intensity = 0.9;
+      pointLight.diffuse = (i % 2 === 0) ? new Color3(0.0, 0.95, 1.0) : new Color3(1.0, 0.2, 0.7);
+      pointLight.range = 55;
     }
   }
 
