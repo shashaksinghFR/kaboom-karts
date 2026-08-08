@@ -7,14 +7,17 @@ import { NetworkClient } from "./network/NetworkClient";
 import { soundManager } from "./audio/SoundManager";
 
 window.addEventListener("DOMContentLoaded", async () => {
-  // Unlock Web Audio API on first user interaction
+  // Unlock Web Audio API & Start BGM on first user interaction
   const unlockAudio = () => {
     soundManager.init();
+    soundManager.startBackgroundMusic();
     window.removeEventListener("pointerdown", unlockAudio);
     window.removeEventListener("keydown", unlockAudio);
+    window.removeEventListener("touchstart", unlockAudio);
   };
   window.addEventListener("pointerdown", unlockAudio);
   window.addEventListener("keydown", unlockAudio);
+  window.addEventListener("touchstart", unlockAudio);
 
   // 1. Initialize Canvas, Engine & Scene
   const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
@@ -115,13 +118,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     prototypeScene.kartVisual.loadKartModel(kartModelIndex);
   };
 
+  lobbyUI.onSwitchSlotCallback = (slotIndex: number) => {
+    networkClient.switchSlot(slotIndex);
+  };
+
   lobbyUI.onSetGameModeCallback = (gameMode: "ffa" | "team") => {
     networkClient.setGameMode(gameMode);
   };
 
   lobbyUI.onLeaveRoomCallback = () => {
     networkClient.leaveRoom();
-    soundManager.stopBackgroundMusic();
     hasSetInitialSpawn = false;
   };
 
@@ -135,7 +141,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   lobbyUI.onReturnToLobbyCallback = () => {
     networkClient.sendRematch();
-    soundManager.stopBackgroundMusic();
     lobbyUI.showScreen("lobby");
   };
 
@@ -159,21 +164,19 @@ window.addEventListener("DOMContentLoaded", async () => {
         lobbyUI.showScreen("game");
         lobbyUI.hideCountdown();
         soundManager.playCountdown(0); // High GO! chime
-        soundManager.startBackgroundMusic(); // Start Cyber Synthwave Track
+        soundManager.ensureBGMPlaying();
       } else if (newPhase === "lobby") {
         lobbyUI.showScreen("lobby");
         lobbyUI.hideCountdown();
-        soundManager.stopBackgroundMusic();
         hasSetInitialSpawn = false;
       } else if (newPhase === "gameover") {
-        soundManager.stopBackgroundMusic();
         const myPlayer = state.players?.get(networkClient.localSessionId);
         const isTeamMode = state.gameMode === "team";
         const isLocalWinner = isTeamMode
           ? (state.winningTeam && myPlayer?.team === state.winningTeam)
-          : (state.winnerSessionId === networkClient.localSessionId);
+          : (state.winnerId === networkClient.localSessionId || state.winnerSessionId === networkClient.localSessionId);
 
-        lobbyUI.showMatchResult(state.winnerName || "Opponent", isLocalWinner, state.winningTeam);
+        lobbyUI.showMatchResult(state.winnerName || "Opponent", !!isLocalWinner, state.winningTeam);
       }
     }
 

@@ -59,6 +59,7 @@ export class LobbyUI {
   public onLeaveRoomCallback?: () => void;
   public onToggleReadyCallback?: () => void;
   public onSelectKartCallback?: (kartModelIndex: number) => void;
+  public onSwitchSlotCallback?: (slotIndex: number) => void;
   public onSetGameModeCallback?: (gameMode: "ffa" | "team") => void;
   public onStartGameCallback?: () => void;
   public onReturnToLobbyCallback?: () => void;
@@ -241,10 +242,29 @@ export class LobbyUI {
   }
 
   private toggleFullscreen(): void {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
+    const doc = document as any;
+    const elem = document.documentElement as any;
+    const isFs = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+    if (!isFs) {
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        elem.mozRequestFullScreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
     } else {
-      document.exitFullscreen?.().catch(() => {});
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => {});
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      } else if (doc.mozCancelFullScreen) {
+        doc.mozCancelFullScreen();
+      } else if (doc.msExitFullscreen) {
+        doc.msExitFullscreen();
+      }
     }
   }
 
@@ -393,7 +413,7 @@ export class LobbyUI {
     }
 
     if (this.gameoverBadge) {
-      this.gameoverBadge.textContent = isLocalWinner ? "CHAMPION" : "MATCH ENDED";
+      this.gameoverBadge.textContent = isLocalWinner ? "🏆 CHAMPION" : "MATCH OVER";
     }
 
     if (this.gameoverTitle) {
@@ -403,16 +423,16 @@ export class LobbyUI {
     if (this.winnerNameBanner) {
       if (winningTeam && (winningTeam === "blue" || winningTeam === "red")) {
         const teamLabel = winningTeam === "blue" ? "TEAM BLUE" : "TEAM RED";
-        this.winnerNameBanner.textContent = isLocalWinner ? `YOUR ${teamLabel} WON!` : `${teamLabel} WON`;
+        this.winnerNameBanner.textContent = isLocalWinner ? `YOUR ${teamLabel} WON!` : `${teamLabel} WON THE MATCH`;
       } else {
-        this.winnerNameBanner.textContent = isLocalWinner ? "YOU WON THE MATCH!" : `${winnerName} WON`;
+        this.winnerNameBanner.textContent = isLocalWinner ? "YOU WON THE MATCH!" : `${winnerName} WON THE MATCH`;
       }
     }
 
     if (this.gameoverSubtitle) {
       this.gameoverSubtitle.textContent = isLocalWinner
-        ? "You obliterated all rivals in the Cyberpunk Arena!"
-        : `Eliminated from the arena. Better luck in the next round!`;
+        ? "You eliminated all rivals and dominated the Cyberpunk Arena!"
+        : "Eliminated from the arena. Better luck in the next round!";
     }
 
     this.showScreen("gameover");
@@ -529,26 +549,41 @@ export class LobbyUI {
           </div>
         `;
       } else {
+        const emptyLabel = gameMode === "team"
+          ? (isTeamBlue ? "+ JOIN BLUE" : "+ JOIN RED")
+          : "+ JOIN SLOT";
+
         slotsHtml += `
-          <div class="slot-card empty ${teamCardClass}" style="--slot-color: ${colorDef.hex}">
+          <div class="slot-card empty clickable-slot ${teamCardClass}" data-slot-index="${slot}" style="--slot-color: ${colorDef.hex}" title="Click to switch to this slot">
             <div class="slot-header">
               <span class="slot-number">${gameMode === "team" ? teamTag : `SLOT ${slotNumStr}`}</span>
-              <div class="slot-color-swatch" style="opacity: 0.25;"></div>
+              <div class="slot-color-swatch" style="opacity: 0.35;"></div>
             </div>
             <div class="slot-body">
-              <div class="slot-avatar" style="opacity: 0.3; font-family: var(--font-mono); font-size: 0.75rem;">--</div>
+              <div class="slot-avatar" style="opacity: 0.4; font-family: var(--font-mono); font-size: 0.75rem;">+</div>
               <div class="slot-name-wrap">
-                <div class="slot-pilot-name" style="color: var(--text-muted);">OPEN SLOT</div>
-                <span class="slot-role-tag" style="opacity: 0.3;">${colorDef.name.toUpperCase()} TRAIL</span>
+                <div class="slot-pilot-name" style="color: var(--text-secondary);">OPEN SLOT</div>
+                <span class="slot-role-tag" style="color: ${colorDef.hex}; opacity: 0.75;">${colorDef.name.toUpperCase()} TRAIL</span>
               </div>
             </div>
-            <div class="slot-status-pill waiting">EMPTY</div>
+            <div class="slot-status-pill switch-pill">${emptyLabel}</div>
           </div>
         `;
       }
     }
 
     this.slotsGrid.innerHTML = slotsHtml;
+
+    // Attach click listeners to empty slots so players can switch teams/slots
+    const emptySlotCards = this.slotsGrid.querySelectorAll(".slot-card.empty");
+    emptySlotCards.forEach((card) => {
+      card.addEventListener("click", () => {
+        const slotIdx = parseInt(card.getAttribute("data-slot-index") || "-1", 10);
+        if (slotIdx >= 0 && slotIdx < 10) {
+          this.onSwitchSlotCallback?.(slotIdx);
+        }
+      });
+    });
 
     // Update Action Buttons
     if (this.btnToggleReady) {

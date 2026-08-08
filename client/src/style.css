@@ -46,8 +46,16 @@
 
 html, body {
   width: 100%;
+  width: 100vw;
   height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+  touch-action: none;
   background-color: var(--bg-space);
   font-family: var(--font-main);
   color: var(--text-primary);
@@ -55,21 +63,27 @@ html, body {
 }
 
 #app {
-  position: relative;
+  position: fixed;
+  inset: 0;
+  width: 100%;
   width: 100vw;
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 3D Canvas */
 #renderCanvas {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: block;
   outline: none;
+  touch-action: none;
   z-index: 1;
 }
 
@@ -1075,6 +1089,36 @@ html, body {
   color: var(--text-muted);
 }
 
+.slot-card.empty.clickable-slot {
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+}
+
+.slot-card.empty.clickable-slot:hover,
+.slot-card.empty.clickable-slot:active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--slot-color, var(--accent-cyan));
+  box-shadow: 0 0 16px var(--slot-color, var(--accent-cyan));
+  transform: translateY(-2px);
+}
+
+.slot-status-pill.switch-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  transition: all 0.2s ease;
+}
+
+.slot-card.empty.clickable-slot:hover .slot-status-pill.switch-pill {
+  background: var(--slot-color, var(--accent-cyan));
+  color: #040814;
+  border-color: var(--slot-color, var(--accent-cyan));
+  box-shadow: 0 0 10px var(--slot-color, var(--accent-cyan));
+}
+
 .lobby-footer {
   display: flex;
   align-items: center;
@@ -1604,16 +1648,95 @@ html, body {
 }
 
 /* ==========================================================================
-   RESPONSIVENESS
+   RESPONSIVENESS & MOBILE VIEWPORT ADAPTATION
    ========================================================================== */
 @media (max-width: 900px) {
-  .home-hero {
-    grid-template-columns: 1fr;
-    gap: 20px;
+  .home-container {
+    gap: clamp(10px, 2vh, 20px);
+    height: 100%;
+    max-height: 100dvh;
+    justify-content: center;
+    align-items: center;
+    padding: 0 8px;
   }
 
-  .hero-description {
+  .home-nav {
+    width: 100%;
+    max-width: 440px;
+    justify-content: space-between;
+  }
+
+  .brand-badge-large {
+    padding: 6px 12px;
+    gap: 8px;
+  }
+
+  .brand-title-large {
+    font-size: 0.95rem;
+  }
+
+  .brand-tag {
     display: none;
+  }
+
+  .nav-right-cluster {
+    gap: 6px;
+  }
+
+  .control-badge-btn {
+    padding: 5px 10px;
+    font-size: 0.68rem;
+  }
+
+  .badge-multiplayer {
+    display: none;
+  }
+
+  .home-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 0;
+  }
+
+  /* Center the action card prominently and hide verbose marketing text on mobile */
+  .hero-left {
+    display: none;
+  }
+
+  .hero-right {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .action-card {
+    width: 100%;
+    max-width: 380px;
+    padding: clamp(14px, 2.5vh, 22px);
+    gap: clamp(10px, 2vh, 16px);
+    border-radius: 16px;
+    box-shadow: var(--glow-cyan);
+  }
+
+  .card-title {
+    font-size: 1.15rem;
+  }
+
+  .card-subtitle {
+    font-size: 0.78rem;
+  }
+
+  .futuristic-input {
+    padding: 10px 12px;
+    font-size: 0.88rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 11px 16px;
+    font-size: 0.88rem;
   }
 
   .slots-grid {
@@ -1627,22 +1750,44 @@ html, body {
   }
 }
 
+/* Landscape & Compact Height Mobile Screens (e.g. phones in landscape mode) */
 @media (max-height: 540px) {
   .home-container {
-    gap: 10px;
+    gap: 6px;
+    justify-content: center;
+    max-height: 100dvh;
   }
 
-  .hero-heading {
-    font-size: 1.8rem;
+  .home-nav {
+    max-width: 500px;
   }
 
-  .feature-pills {
+  .hero-left {
     display: none;
   }
 
   .action-card {
-    padding: 16px;
-    gap: 10px;
+    max-width: 440px;
+    padding: 10px 16px;
+    gap: 8px;
+  }
+
+  .card-header {
+    display: none;
+  }
+
+  .futuristic-input {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+
+  .divider-wrap {
+    margin: 2px 0;
   }
 
   .slots-grid {
@@ -1651,28 +1796,29 @@ html, body {
   }
 
   .slot-card {
-    min-height: 65px;
+    min-height: 58px;
     padding: 5px 8px;
-    gap: 3px;
+    gap: 2px;
   }
 
   .garage-section {
-    padding: 8px 10px;
-    gap: 6px;
-  }
-
-  .kart-card {
-    flex: 0 0 145px;
-    padding: 6px 8px;
+    padding: 6px 10px;
     gap: 4px;
   }
 
+  .kart-card {
+    flex: 0 0 135px;
+    padding: 5px 6px;
+    gap: 3px;
+  }
+
   .kart-visual-preview {
-    height: 26px;
+    height: 24px;
   }
 
   .lobby-container {
-    padding: 12px 16px;
-    gap: 8px;
+    padding: 8px 14px;
+    gap: 6px;
+    max-height: 98dvh;
   }
 }

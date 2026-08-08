@@ -60,6 +60,37 @@ export class KartRoom extends Room<KartRoomState> {
       }
     });
 
+    this.onMessage("switchSlot", (client, data: { targetSlotIndex: number }) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && this.state.matchPhase === "lobby") {
+        const targetSlot = Math.max(0, Math.min(9, Math.floor(data.targetSlotIndex)));
+
+        // Check if target slot is occupied by another racer
+        let isOccupied = false;
+        let occupiedByName = "";
+        this.state.players.forEach((otherPlayer, otherSessionId) => {
+          if (otherSessionId !== client.sessionId && otherPlayer.slotIndex === targetSlot) {
+            isOccupied = true;
+            occupiedByName = otherPlayer.name;
+          }
+        });
+
+        if (isOccupied) {
+          client.send("error", { message: `Slot ${targetSlot + 1} is already occupied by ${occupiedByName}.` });
+        } else {
+          player.slotIndex = targetSlot;
+          if (this.state.gameMode === "team") {
+            player.team = targetSlot < 5 ? "blue" : "red";
+            player.colorIndex = player.team === "blue" ? 0 : 5;
+          } else {
+            player.team = "none";
+            player.colorIndex = targetSlot;
+          }
+          console.log(`🔀 ${player.name} (${client.sessionId}) switched to Slot #${targetSlot + 1} (Team: ${player.team})`);
+        }
+      }
+    });
+
     this.onMessage("startGame", (client) => {
       const player = this.state.players.get(client.sessionId);
       if (player?.isHost && this.state.matchPhase === "lobby") {

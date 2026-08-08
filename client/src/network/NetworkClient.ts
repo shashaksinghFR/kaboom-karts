@@ -186,6 +186,12 @@ export class NetworkClient {
     }
   }
 
+  public switchSlot(targetSlotIndex: number): void {
+    if (this.room) {
+      this.room.send("switchSlot", { targetSlotIndex });
+    }
+  }
+
   public selectKart(kartModelIndex: number): void {
     if (this.room) {
       this.room.send("selectKart", { kartModelIndex });
