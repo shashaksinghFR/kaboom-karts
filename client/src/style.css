@@ -167,21 +167,39 @@ html, body {
   background: radial-gradient(circle at 60% 40%, rgba(4, 7, 16, 0.4) 0%, rgba(4, 7, 16, 0.92) 80%);
 }
 
-.lobby-backdrop {
-  position: absolute;
+#lobby-view {
+  position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  background-color: #030611;
+  z-index: 120;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lobby-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
   background-image: url("/assets/backgroundlobby.png");
   background-size: cover;
   background-position: center;
-  filter: brightness(0.85) contrast(1.12);
-  z-index: -1;
+  background-repeat: no-repeat;
+  filter: brightness(0.9) contrast(1.12);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .lobby-backdrop::after {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(6, 10, 24, 0.45) 0%, rgba(4, 7, 16, 0.88) 100%);
+  background: radial-gradient(circle at center, rgba(6, 10, 24, 0.4) 0%, rgba(3, 6, 17, 0.92) 100%);
+  pointer-events: none;
 }
 
 /* Home Screen Container */
@@ -1831,4 +1849,125 @@ html, body {
     gap: 6px;
     max-height: 98dvh;
   }
+}
+
+/* ==========================================================================
+   KILL BANNER, SHOT DOWN MODAL & LIVE KILLFEED
+   ========================================================================== */
+.kill-banner {
+  position: fixed;
+  top: 75px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(255, 170, 0, 0.95) 0%, rgba(255, 60, 0, 0.95) 100%);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 10px 24px;
+  border-radius: 30px;
+  box-shadow: 0 0 25px rgba(255, 120, 0, 0.75), 0 4px 15px rgba(0, 0, 0, 0.6);
+  z-index: 150;
+  animation: killPopIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes killPopIn {
+  from { transform: translateX(-50%) scale(0.6) translateY(-20px); opacity: 0; }
+  to { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+}
+
+.hud-killfeed {
+  position: fixed;
+  top: 75px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 140;
+  pointer-events: none;
+}
+
+.killfeed-item {
+  background: rgba(8, 14, 28, 0.88);
+  border: 1px solid var(--border-neon-cyan);
+  backdrop-filter: blur(8px);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: feedSlideIn 0.3s ease-out;
+}
+
+@keyframes feedSlideIn {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.shotdown-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 5, 12, 0.85);
+  backdrop-filter: blur(16px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.shotdown-card {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(16, 20, 36, 0.95);
+  border: 2px solid var(--accent-red);
+  box-shadow: 0 0 35px rgba(255, 42, 75, 0.45);
+  border-radius: 20px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  animation: modalBounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.shotdown-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--accent-red);
+  background: rgba(255, 42, 75, 0.15);
+  border: 1px solid var(--accent-red);
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+
+.shotdown-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #ff3355;
+  letter-spacing: 0.1em;
+}
+
+.shotdown-killer {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 16px;
+  border-radius: 10px;
+}
+
+.shotdown-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }

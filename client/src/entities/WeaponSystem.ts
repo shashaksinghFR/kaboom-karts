@@ -11,7 +11,7 @@ export class WeaponSystem {
   // Weapon Tunables
   public cooldownDuration: number = 3.0; // 3.0 seconds cooldown as requested
   public cooldownTimer: number = 0;       // Seconds remaining until ready
-  public missileSpeed: number = 55.0;     // m/s
+  public missileSpeed: number = 65.0;     // Fast high-velocity rocket m/s
 
   constructor(scene: Scene, cooldownDuration: number = 3.0) {
     this.scene = scene;

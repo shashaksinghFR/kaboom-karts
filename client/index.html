@@ -287,6 +287,15 @@
           <div id="scoreboard-list" class="scoreboard-list"></div>
         </div>
 
+        <!-- Live Killfeed Notifications (Top Right) -->
+        <div id="hud-killfeed" class="hud-killfeed"></div>
+
+        <!-- Floating Kill Announcement (Center-Top) -->
+        <div id="kill-banner" class="kill-banner" style="display: none;">
+          <span class="kill-icon">🎯</span>
+          <span id="kill-banner-text" class="kill-text">YOU SHOT DOWN RACER!</span>
+        </div>
+
         <!-- 5-Second Match Countdown Overlay (Center Screen) -->
         <div id="countdown-overlay" class="countdown-overlay" style="display: none;">
           <div class="countdown-subtext">MATCH STARTING IN</div>
@@ -325,7 +334,22 @@
         </div>
       </div>
 
-      <!-- VIEW 4: Match Over Victory / Defeat Modal -->
+      <!-- VIEW 4: Player Shot Down / Eliminated Overlay -->
+      <div id="shotdown-modal" class="shotdown-overlay" style="display: none;">
+        <div class="shotdown-card">
+          <div class="shotdown-badge">💥 VEHICLE DESTROYED</div>
+          <h2 class="shotdown-title">SHOT DOWN</h2>
+          <div id="shotdown-killer-name" class="shotdown-killer">BY RIVAL PILOT</div>
+          <p class="shotdown-desc">Your kart was eliminated from combat.</p>
+          <div class="modal-actions">
+            <button id="btn-shotdown-lobby" class="btn-primary">
+              <span>RETURN TO LOBBY</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 5: Match Over Victory / Defeat Modal -->
       <div id="gameover-modal" class="modal-overlay" style="display: none;">
         <div id="gameover-card" class="modal-card victory">
           <div id="gameover-badge" class="winner-trophy-badge">WINNER</div>

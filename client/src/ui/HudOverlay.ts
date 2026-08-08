@@ -13,8 +13,18 @@ export class HudOverlay {
   private weaponText: HTMLElement | null;
   private weaponCooldownFill: HTMLElement | null;
 
+  // Kill & Elimination elements
+  private killBanner: HTMLElement | null;
+  private killBannerText: HTMLElement | null;
+  private killfeedContainer: HTMLElement | null;
+  private shotdownModal: HTMLElement | null;
+  private shotdownKillerName: HTMLElement | null;
+  private btnShotdownLobby: HTMLButtonElement | null;
+
+  private killBannerTimeout: any = null;
   private lastFpsUpdate: number = 0;
   private onCameraToggleCallback: (() => void) | null = null;
+  private onShotdownLobbyCallback: (() => void) | null = null;
 
   constructor() {
     this.fpsElement = document.getElementById("fps-display");
@@ -28,6 +38,13 @@ export class HudOverlay {
     this.weaponText = document.getElementById("weapon-status-text");
     this.weaponCooldownFill = document.getElementById("weapon-cooldown-fill");
 
+    this.killBanner = document.getElementById("kill-banner");
+    this.killBannerText = document.getElementById("kill-banner-text");
+    this.killfeedContainer = document.getElementById("hud-killfeed");
+    this.shotdownModal = document.getElementById("shotdown-modal");
+    this.shotdownKillerName = document.getElementById("shotdown-killer-name");
+    this.btnShotdownLobby = document.getElementById("btn-shotdown-lobby") as HTMLButtonElement;
+
     if (this.camToggleBtn) {
       this.camToggleBtn.addEventListener("click", () => {
         if (this.onCameraToggleCallback) {
@@ -35,10 +52,73 @@ export class HudOverlay {
         }
       });
     }
+
+    if (this.btnShotdownLobby) {
+      this.btnShotdownLobby.addEventListener("click", () => {
+        this.hideShotDownModal();
+        if (this.onShotdownLobbyCallback) {
+          this.onShotdownLobbyCallback();
+        }
+      });
+    }
   }
 
   public onCameraToggle(callback: () => void): void {
     this.onCameraToggleCallback = callback;
+  }
+
+  public onShotdownLobby(callback: () => void): void {
+    this.onShotdownLobbyCallback = callback;
+  }
+
+  public showKillBanner(victimName: string): void {
+    if (!this.killBanner || !this.killBannerText) return;
+
+    if (this.killBannerTimeout) {
+      clearTimeout(this.killBannerTimeout);
+    }
+
+    this.killBannerText.textContent = `YOU SHOT DOWN ${victimName.toUpperCase()}!`;
+    this.killBanner.style.display = "flex";
+
+    this.killBannerTimeout = setTimeout(() => {
+      if (this.killBanner) {
+        this.killBanner.style.display = "none";
+      }
+    }, 3200);
+  }
+
+  public addKillfeedItem(killerName: string, victimName: string): void {
+    if (!this.killfeedContainer) return;
+
+    const item = document.createElement("div");
+    item.className = "killfeed-item";
+    item.innerHTML = `<span style="color: var(--accent-cyan);">${killerName}</span> <span>🚀</span> <span style="color: var(--accent-red);">${victimName}</span>`;
+
+    this.killfeedContainer.appendChild(item);
+
+    // Fade out and remove after 4.5 seconds
+    setTimeout(() => {
+      item.style.transition = "opacity 0.5s ease-out, transform 0.5s ease-out";
+      item.style.opacity = "0";
+      item.style.transform = "translateX(30px)";
+      setTimeout(() => item.remove(), 500);
+    }, 4500);
+  }
+
+  public showShotDownModal(killerName: string): void {
+    if (this.shotdownKillerName) {
+      this.shotdownKillerName.textContent = killerName ? `BY ${killerName.toUpperCase()}` : "BY RIVAL COMBATANT";
+    }
+    if (this.shotdownModal) {
+      this.shotdownModal.style.display = "flex";
+    }
+  }
+
+  public hideShotDownModal(): void {
+    if (this.shotdownModal) {
+      this.shotdownModal.style.display = "none";
+    }
   }
 
   public setCameraMode(mode: CameraMode): void {

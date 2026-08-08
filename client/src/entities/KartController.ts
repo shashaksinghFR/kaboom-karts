@@ -19,18 +19,18 @@ export interface KartTuning {
 }
 
 export const DEFAULT_KART_TUNING: KartTuning = {
-  maxForwardSpeed: 28.0,       // ~100 km/h cruising speed
-  maxReverseSpeed: 10.0,
-  boostMultiplier: 1.4,        // ~140 km/h boost speed
-  acceleration: 28.0,
-  deceleration: 14.0,
-  braking: 38.0,
-  turnRate: 2.35,              // Responsive turn rate
-  steeringSmoothing: 10.0,     // Fast, immediate steering response
-  driftTurnMultiplier: 1.55,
-  lateralFriction: 0.88,       // Solid tire grip
-  driftLateralFriction: 0.94,  // Controllable slide on drift
-  maxBankingRoll: 0.18,        // Subtle natural roll
+  maxForwardSpeed: 32.0,       // ~115 km/h thrilling cruising speed
+  maxReverseSpeed: 12.0,
+  boostMultiplier: 1.45,       // ~165 km/h hyper-boost speed
+  acceleration: 35.0,          // Instant punchy throttle response
+  deceleration: 16.0,          // Natural rolling friction
+  braking: 48.0,               // High-response braking
+  turnRate: 2.75,              // Razor-sharp steering agility
+  steeringSmoothing: 12.0,     // Direct, zero-lag steering response
+  driftTurnMultiplier: 1.65,   // Satisfying power-slide rotation
+  lateralFriction: 0.86,       // Solid high-speed asphalt grip
+  driftLateralFriction: 0.93,  // Smooth, controllable lateral drift slide
+  maxBankingRoll: 0.22,        // Dramatic dynamic chassis lean
 };
 
 export class KartController {

@@ -109,7 +109,7 @@ export class RemoteKartVisual {
 
     this.trailMaterial = new StandardMaterial(`RemoteTrailMat_${this.playerName}`, this.scene);
     this.trailMaterial.disableLighting = true;
-    this.trailMaterial.alpha = 0.42;
+    this.trailMaterial.alpha = 1.0; // 100% Opaque solid laser ribbon
     this.trailMaterial.backFaceCulling = false;
     this.setPlayerColor(this.colorIndex, this.team);
   }
@@ -130,7 +130,8 @@ export class RemoteKartVisual {
 
     if (this.trailMaterial) {
       this.trailMaterial.diffuseColor = color3;
-      this.trailMaterial.emissiveColor = color3;
+      this.trailMaterial.emissiveColor = color3.scale(2.5);
+      this.trailMaterial.alpha = 1.0;
     }
   }
 
@@ -141,8 +142,8 @@ export class RemoteKartVisual {
       `RemoteLeftTrail_${this.playerName}_${this.modelIndex}`,
       this.leftTailLightAnchor,
       this.scene,
-      0.08,
-      35,
+      0.30, // Thick, bold glowing laser beam
+      45,   // Smooth stream
       true
     );
     this.leftTrailMesh.material = this.trailMaterial;
@@ -151,8 +152,8 @@ export class RemoteKartVisual {
       `RemoteRightTrail_${this.playerName}_${this.modelIndex}`,
       this.rightTailLightAnchor,
       this.scene,
-      0.08,
-      35,
+      0.30, // Thick, bold glowing laser beam
+      45,   // Smooth stream
       true
     );
     this.rightTrailMesh.material = this.trailMaterial;

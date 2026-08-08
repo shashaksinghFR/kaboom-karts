@@ -216,6 +216,25 @@ window.addEventListener("DOMContentLoaded", async () => {
     soundManager.playExplosion();
   };
 
+  networkClient.onPlayerEliminated = (data) => {
+    soundManager.playExplosion();
+    hud.addKillfeedItem(data.killerName || "Rival", data.eliminatedName || "Racer");
+
+    if (data.eliminatedId === networkClient.localSessionId) {
+      // Local player was shot down!
+      prototypeScene.weaponSystem.spawnExplosion(prototypeScene.kartController.position.clone());
+      hud.showShotDownModal(data.killerName || "Rival Racer");
+    } else if (data.killerId === networkClient.localSessionId) {
+      // Local player shot down an opponent!
+      hud.showKillBanner(data.eliminatedName || "Rival");
+    }
+  };
+
+  hud.onShotdownLobby(() => {
+    networkClient.leaveRoom();
+    lobbyUI.showScreen("home");
+  });
+
   networkClient.onError = (msg) => {
     lobbyUI.showError(msg);
   };

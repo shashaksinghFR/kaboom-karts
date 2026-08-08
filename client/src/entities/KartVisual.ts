@@ -84,9 +84,9 @@ export class KartVisual implements IKartVisual {
     const defaultColor = getPlayerColor(this.colorIndex);
     this.trailMaterial = new StandardMaterial("TailTrailMat", this.scene);
     this.trailMaterial.diffuseColor = defaultColor.color3;
-    this.trailMaterial.emissiveColor = defaultColor.color3;
+    this.trailMaterial.emissiveColor = defaultColor.color3.scale(2.5);
     this.trailMaterial.disableLighting = true;
-    this.trailMaterial.alpha = 0.38;
+    this.trailMaterial.alpha = 1.0; // 100% Opaque solid laser ribbon
     this.trailMaterial.backFaceCulling = false;
   }
 
@@ -97,8 +97,8 @@ export class KartVisual implements IKartVisual {
       "LeftTailTrail",
       this.leftTailLightAnchor,
       this.scene,
-      0.08,
-      35,
+      0.30, // Thick, bold glowing laser beam
+      45,   // Smooth stream
       true
     );
     this.leftTrailMesh.material = this.trailMaterial;
@@ -107,8 +107,8 @@ export class KartVisual implements IKartVisual {
       "RightTailTrail",
       this.rightTailLightAnchor,
       this.scene,
-      0.08,
-      35,
+      0.30, // Thick, bold glowing laser beam
+      45,   // Smooth stream
       true
     );
     this.rightTrailMesh.material = this.trailMaterial;
@@ -131,7 +131,8 @@ export class KartVisual implements IKartVisual {
 
     if (this.trailMaterial) {
       this.trailMaterial.diffuseColor = color3;
-      this.trailMaterial.emissiveColor = color3;
+      this.trailMaterial.emissiveColor = color3.scale(2.5);
+      this.trailMaterial.alpha = 1.0;
     }
   }
 

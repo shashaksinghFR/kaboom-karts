@@ -30,6 +30,10 @@ export class SoundManager {
   private driftNoiseGain: GainNode | null = null;
   private driftFilter: BiquadFilterNode | null = null;
 
+  // Asset Audio Buffers & Clips
+  private shootBuffer: AudioBuffer | null = null;
+  private boomBuffer: AudioBuffer | null = null;
+
   constructor() {}
 
   public init(): void {
@@ -50,7 +54,7 @@ export class SoundManager {
       this.masterGain.connect(this.ctx.destination);
 
       this.sfxGain = this.ctx.createGain();
-      this.sfxGain.gain.setValueAtTime(0.9, this.ctx.currentTime);
+      this.sfxGain.gain.setValueAtTime(0.95, this.ctx.currentTime);
       this.sfxGain.connect(this.masterGain);
 
       this.musicGain = this.ctx.createGain();
@@ -60,10 +64,35 @@ export class SoundManager {
       this.setupEngineSynth();
       this.setupDriftSynth();
       this.initBGM();
+      this.loadSoundAssets();
 
-      console.log("🔊 Audio Engine Initialized");
+      console.log("🔊 Audio Engine Initialized with Shoot & Boom Assets");
     } catch (e) {
       console.warn("Web Audio API not supported", e);
+    }
+  }
+
+  private async loadSoundAssets(): Promise<void> {
+    if (!this.ctx) return;
+
+    // Load Shoot SFX
+    try {
+      const shootRes = await fetch("/audio/shoot.mp3");
+      const shootArrayBuf = await shootRes.arrayBuffer();
+      this.shootBuffer = await this.ctx.decodeAudioData(shootArrayBuf);
+      console.log("🎯 shoot.mp3 audio buffer decoded successfully");
+    } catch (e) {
+      console.warn("Failed to load /audio/shoot.mp3 buffer, falling back to dynamic audio element", e);
+    }
+
+    // Load Boom SFX
+    try {
+      const boomRes = await fetch("/audio/boom.mp3");
+      const boomArrayBuf = await boomRes.arrayBuffer();
+      this.boomBuffer = await this.ctx.decodeAudioData(boomArrayBuf);
+      console.log("💥 boom.mp3 audio buffer decoded successfully");
+    } catch (e) {
+      console.warn("Failed to load /audio/boom.mp3 buffer, falling back to dynamic audio element", e);
     }
   }
 
@@ -182,52 +211,86 @@ export class SoundManager {
     }
   }
 
-  // 1. Play Shoot Sound (Futuristic High-Energy Hyper-Plasma Launch)
+  // 1. Play Shoot Sound (using shoot.mp3 asset with high-performance buffer)
   public playShoot(): void {
     this.init();
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.isMuted) return;
 
+    if (this.ctx && this.sfxGain && this.shootBuffer) {
+      try {
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.shootBuffer;
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(0.85, this.ctx.currentTime);
+        source.connect(gainNode);
+        gainNode.connect(this.sfxGain);
+        source.start();
+        return;
+      } catch {
+        // Fall back to Audio element
+      }
+    }
+
+    // Fallback: Instant Audio Element clone
+    try {
+      const audio = new Audio("/audio/shoot.mp3");
+      audio.volume = 0.85;
+      audio.play().catch(() => {});
+    } catch {
+      // Procedural synthesizer fallback
+      this.playSynthShoot();
+    }
+  }
+
+  private playSynthShoot(): void {
+    if (!this.ctx || !this.sfxGain) return;
     const now = this.ctx.currentTime;
-
-    // Laser Ping Transient (1400Hz -> 220Hz chirp)
     const pingOsc = this.ctx.createOscillator();
     const pingGain = this.ctx.createGain();
     pingOsc.type = "sawtooth";
     pingOsc.frequency.setValueAtTime(1400, now);
     pingOsc.frequency.exponentialRampToValueAtTime(220, now + 0.12);
-
     pingGain.gain.setValueAtTime(0.4, now);
     pingGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-
     pingOsc.connect(pingGain);
     pingGain.connect(this.sfxGain);
     pingOsc.start(now);
     pingOsc.stop(now + 0.15);
-
-    // Punchy Plasma Sub-Thump (320Hz -> 45Hz)
-    const thumpOsc = this.ctx.createOscillator();
-    const thumpGain = this.ctx.createGain();
-    thumpOsc.type = "triangle";
-    thumpOsc.frequency.setValueAtTime(320, now);
-    thumpOsc.frequency.exponentialRampToValueAtTime(45, now + 0.18);
-
-    thumpGain.gain.setValueAtTime(0.5, now);
-    thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-
-    thumpOsc.connect(thumpGain);
-    thumpGain.connect(this.sfxGain);
-    thumpOsc.start(now);
-    thumpOsc.stop(now + 0.22);
   }
 
-  // 2. Play Heavy Cinematic Sci-Fi Shockwave Blast / Detonation
+  // 2. Play Heavy Blast Sound (using boom.mp3 asset with high-performance buffer)
   public playExplosion(): void {
     this.init();
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.isMuted) return;
 
+    if (this.ctx && this.sfxGain && this.boomBuffer) {
+      try {
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.boomBuffer;
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(1.0, this.ctx.currentTime);
+        source.connect(gainNode);
+        gainNode.connect(this.sfxGain);
+        source.start();
+        return;
+      } catch {
+        // Fall back to Audio element
+      }
+    }
+
+    // Fallback: Instant Audio Element clone
+    try {
+      const audio = new Audio("/audio/boom.mp3");
+      audio.volume = 1.0;
+      audio.play().catch(() => {});
+    } catch {
+      this.playSynthExplosion();
+    }
+  }
+
+  private playSynthExplosion(): void {
+    if (!this.ctx || !this.sfxGain) return;
     const now = this.ctx.currentTime;
-
-    // Layer A: Sharp Hypersonic Hull Rupture Crack (1600Hz -> 180Hz)
     const snapOsc = this.ctx.createOscillator();
     const snapGain = this.ctx.createGain();
     snapOsc.type = "triangle";
@@ -240,7 +303,6 @@ export class SoundManager {
     snapOsc.start(now);
     snapOsc.stop(now + 0.09);
 
-    // Layer B: Heavy Deep Sub-Bass Kinetic Shockwave (260Hz -> 28Hz)
     const subOsc = this.ctx.createOscillator();
     const subGain = this.ctx.createGain();
     subOsc.type = "sine";
@@ -252,32 +314,6 @@ export class SoundManager {
     subGain.connect(this.sfxGain);
     subOsc.start(now);
     subOsc.stop(now + 0.72);
-
-    // Layer C: Resonant Expanding Plasma Debris Burst
-    const bufferSize = Math.floor(this.ctx.sampleRate * 0.65);
-    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.16));
-    }
-
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = noiseBuffer;
-
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(2400, now);
-    filter.frequency.exponentialRampToValueAtTime(140, now + 0.6);
-
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.75, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.62);
-
-    noiseSource.connect(filter);
-    filter.connect(noiseGain);
-    noiseGain.connect(this.sfxGain);
-
-    noiseSource.start(now);
   }
 
   // 3. Countdown Beep (Digit beep on 5..1, Victory GO chime on 0)

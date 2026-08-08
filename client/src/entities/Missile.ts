@@ -7,6 +7,7 @@ import {
   Mesh,
   TransformNode,
   TrailMesh,
+  PointLight,
 } from "@babylonjs/core";
 import { SCENE_CONFIG } from "../config/constants";
 
@@ -17,10 +18,12 @@ export class Missile {
   private trailMesh: TrailMesh | null = null;
   private trailMat!: StandardMaterial;
 
+  private light: PointLight | null = null;
+
   public velocity: Vector3;
-  public speed: number = 55.0; // Tunable constant speed in m/s
+  public speed: number = 65.0; // Fast high-velocity rocket
   public age: number = 0;
-  public maxLifetime: number = 3.5; // Tunable max lifetime in seconds
+  public maxLifetime: number = 3.5;
   public isDead: boolean = false;
 
   private arenaRadius: number;
@@ -29,7 +32,7 @@ export class Missile {
     scene: Scene,
     spawnPosition: Vector3,
     headingYaw: number,
-    speed: number = 55.0
+    speed: number = 65.0
   ) {
     this.scene = scene;
     this.speed = speed;
@@ -45,10 +48,21 @@ export class Missile {
     this.rootNode.position.copyFrom(spawnPosition);
     this.rootNode.rotation.y = headingYaw;
 
+    // Dynamic light casting onto ground as missile travels
+    try {
+      this.light = new PointLight("MissileLight", new Vector3(0, 0.2, 0), this.scene);
+      this.light.parent = this.rootNode;
+      this.light.diffuse = new Color3(0.0, 0.95, 1.0);
+      this.light.intensity = 2.0;
+      this.light.range = 14;
+    } catch {
+      // Ignore if light limit reached
+    }
+
     // Build Cyberpunk Rocket Visual
     this.createMissileVisual();
 
-    // Setup sleek rocket trail (reduced length & width)
+    // Setup sleek rocket trail
     this.setupMissileTrail();
   }
 
@@ -60,31 +74,32 @@ export class Missile {
     // 1. Rocket Body Cylinder (along Z axis)
     const body = MeshBuilder.CreateCylinder(
       "MissileBody",
-      { height: 0.9, diameter: 0.18, tessellation: 16 },
+      { height: 1.1, diameter: 0.22, tessellation: 16 },
       this.scene
     );
     body.rotation.x = Math.PI / 2; // Orient along Z axis
     body.parent = this.rootNode;
 
     const bodyMat = new StandardMaterial("MissileBodyMat", this.scene);
-    bodyMat.diffuseColor = new Color3(0.05, 0.8, 1.0); // Neon Cyan
-    bodyMat.emissiveColor = new Color3(0.0, 0.5, 0.8);
+    bodyMat.diffuseColor = new Color3(0.0, 0.95, 1.0); // Vivid Neon Cyan
+    bodyMat.emissiveColor = new Color3(0.0, 0.85, 1.0);
+    bodyMat.disableLighting = true;
     body.material = bodyMat;
     this.meshes.push(body);
 
     // 2. Glowing Conical Warhead / Tip
     const tip = MeshBuilder.CreateCylinder(
       "MissileTip",
-      { height: 0.35, diameterTop: 0.0, diameterBottom: 0.18, tessellation: 16 },
+      { height: 0.45, diameterTop: 0.0, diameterBottom: 0.22, tessellation: 16 },
       this.scene
     );
     tip.rotation.x = Math.PI / 2;
-    tip.position.z = 0.6;
+    tip.position.z = 0.75;
     tip.parent = this.rootNode;
 
     const tipMat = new StandardMaterial("MissileTipMat", this.scene);
-    tipMat.diffuseColor = new Color3(1.0, 0.1, 0.5); // Neon Pink / Magenta warhead
-    tipMat.emissiveColor = new Color3(1.0, 0.2, 0.7);
+    tipMat.diffuseColor = new Color3(1.0, 0.05, 0.4); // Intense Pink / Magenta warhead
+    tipMat.emissiveColor = new Color3(1.0, 0.15, 0.6);
     tipMat.disableLighting = true;
     tip.material = tipMat;
     this.meshes.push(tip);
@@ -92,15 +107,15 @@ export class Missile {
     // 3. Thruster Exhaust Glow Ring at rear
     const thruster = MeshBuilder.CreateTorus(
       "MissileThruster",
-      { diameter: 0.18, thickness: 0.04, tessellation: 16 },
+      { diameter: 0.22, thickness: 0.06, tessellation: 16 },
       this.scene
     );
-    thruster.position.z = -0.45;
+    thruster.position.z = -0.55;
     thruster.parent = this.rootNode;
 
     const thrusterMat = new StandardMaterial("MissileThrusterMat", this.scene);
     thrusterMat.diffuseColor = new Color3(1.0, 0.6, 0.0);
-    thrusterMat.emissiveColor = new Color3(1.0, 0.8, 0.1);
+    thrusterMat.emissiveColor = new Color3(1.0, 0.9, 0.2);
     thrusterMat.disableLighting = true;
     thruster.material = thrusterMat;
     this.meshes.push(thruster);
@@ -109,21 +124,20 @@ export class Missile {
   private setupMissileTrail(): void {
     const trailAnchor = new TransformNode("MissileTrailAnchor", this.scene);
     trailAnchor.parent = this.rootNode;
-    trailAnchor.position = new Vector3(0, 0, -0.5);
+    trailAnchor.position = new Vector3(0, 0, -0.6);
 
     this.trailMat = new StandardMaterial("MissileTrailMat", this.scene);
-    this.trailMat.diffuseColor = new Color3(0.0, 0.9, 1.0);
-    this.trailMat.emissiveColor = new Color3(0.0, 0.9, 1.0);
+    this.trailMat.diffuseColor = new Color3(0.0, 0.95, 1.0);
+    this.trailMat.emissiveColor = new Color3(0.0, 0.95, 1.0);
     this.trailMat.disableLighting = true;
-    this.trailMat.alpha = 0.45;
+    this.trailMat.alpha = 1.0; // 100% opaque glowing laser trail
 
-    // Reduced trail diameter (0.06m) and short length (10 segments)
     this.trailMesh = new TrailMesh(
       "MissileTrail",
       trailAnchor,
       this.scene,
-      0.06,
-      10,
+      0.14,
+      14,
       true
     );
     this.trailMesh.material = this.trailMat;
@@ -161,6 +175,10 @@ export class Missile {
     if (this.isDead) return;
     this.isDead = true;
 
+    if (this.light) {
+      this.light.dispose();
+      this.light = null;
+    }
     if (this.trailMesh) {
       this.trailMesh.dispose();
     }
