@@ -115,7 +115,7 @@ export class PrototypeScene {
     const arenaSize = SCENE_CONFIG.DEFAULT_GROUND_SIZE; // 200m
     const arenaRadius = (arenaSize * 0.95) / 2; // ~95m
 
-    // A. Skybox Dome with Illuminated Cyber Skyline
+    // A. Skybox Dome with Crimson Cyber Nebula & Spire Skyline (Reference Image Inspired)
     const skyDome = MeshBuilder.CreateSphere(
       "StadiumSkyDome",
       { diameter: 390, segments: 24, slice: 0.5 },
@@ -131,61 +131,103 @@ export class PrototypeScene {
     const skyTex = new DynamicTexture("StadiumSkyTex", { width: 1024, height: 512 }, this.scene, false);
     const sCtx = skyTex.getContext() as CanvasRenderingContext2D;
 
-    // Bright Twilight Horizon Gradient
+    // Dramatic Crimson Red Nebula Horizon Gradient
     const skyGrad = sCtx.createLinearGradient(0, 0, 0, 512);
-    skyGrad.addColorStop(0.0, "#0a1329");
-    skyGrad.addColorStop(0.55, "#182852");
-    skyGrad.addColorStop(0.85, "#3d2266");
-    skyGrad.addColorStop(1.0, "#851c72");
+    skyGrad.addColorStop(0.0, "#080206");
+    skyGrad.addColorStop(0.45, "#24040c");
+    skyGrad.addColorStop(0.70, "#5e0b1c");
+    skyGrad.addColorStop(0.88, "#a3122c");
+    skyGrad.addColorStop(1.0, "#e61c3e");
     sCtx.fillStyle = skyGrad;
     sCtx.fillRect(0, 0, 1024, 512);
 
-    // Illuminated Cyber City Silhouette on Horizon
-    sCtx.fillStyle = "#121d38";
-    for (let bx = 0; bx < 1024; bx += 32) {
-      const bHeight = 80 + Math.sin(bx * 0.05) * 45 + ((bx * 7) % 50);
-      const bWidth = 26 + (bx % 12);
+    // Glowing Crimson Nebula Clouds
+    for (let c = 0; c < 12; c++) {
+      const cx = (c * 90) % 1024;
+      const cy = 220 + Math.sin(c * 1.5) * 80;
+      const rad = 140 + (c % 4) * 40;
+      const cGrad = sCtx.createRadialGradient(cx, cy, 10, cx, cy, rad);
+      cGrad.addColorStop(0, "rgba(230, 28, 62, 0.35)");
+      cGrad.addColorStop(0.6, "rgba(160, 18, 44, 0.15)");
+      cGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      sCtx.fillStyle = cGrad;
+      sCtx.beginPath();
+      sCtx.arc(cx, cy, rad, 0, Math.PI * 2);
+      sCtx.fill();
+    }
+
+    // High-Tech Cyber Architecture & Spire Silhouette
+    sCtx.fillStyle = "#0c0f18";
+    
+    // Central Cyber Spire (from reference image)
+    const spireX = 512;
+    sCtx.fillRect(spireX - 16, 512 - 260, 32, 260);
+    sCtx.fillRect(spireX - 8, 512 - 340, 16, 80);
+    sCtx.fillRect(spireX - 3, 512 - 390, 6, 50);
+
+    // Illuminated Spire Rings (Glowing Cyan)
+    sCtx.fillStyle = "#00f0ff";
+    for (let sy = 512 - 370; sy < 500; sy += 18) {
+      sCtx.fillRect(spireX - 14, sy, 28, 4);
+    }
+
+    // Flanking Cyber Megastructures & Horizon Towers
+    sCtx.fillStyle = "#0e1320";
+    for (let bx = 0; bx < 1024; bx += 40) {
+      if (Math.abs(bx - spireX) < 40) continue; // Leave center spire clear
+      const distFromCenter = Math.abs(bx - 512) / 512;
+      const bHeight = 90 + distFromCenter * 130 + Math.sin(bx * 0.08) * 40;
+      const bWidth = 32 + (bx % 16);
       sCtx.fillRect(bx, 512 - bHeight, bWidth, bHeight);
 
-      // Lit Windows
-      sCtx.fillStyle = (bx % 64 === 0) ? "#ff007f" : "#00f0ff";
-      for (let wy = 512 - bHeight + 10; wy < 500; wy += 14) {
-        for (let wx = bx + 4; wx < bx + bWidth - 4; wx += 8) {
-          if (Math.random() > 0.3) {
+      // Angled Tron Cyber Line Markings on Buildings (Cyan & Red)
+      sCtx.strokeStyle = (bx % 80 === 0) ? "#ff2a4b" : "#00f0ff";
+      sCtx.lineWidth = 2.5;
+      sCtx.beginPath();
+      sCtx.moveTo(bx + 4, 512);
+      sCtx.lineTo(bx + 4, 512 - bHeight + 10);
+      sCtx.lineTo(bx + bWidth - 4, 512 - bHeight + 20);
+      sCtx.stroke();
+
+      // Lit Cyber Window Grids
+      sCtx.fillStyle = (bx % 80 === 0) ? "rgba(255, 42, 75, 0.9)" : "rgba(0, 240, 255, 0.9)";
+      for (let wy = 512 - bHeight + 25; wy < 500; wy += 16) {
+        for (let wx = bx + 8; wx < bx + bWidth - 8; wx += 10) {
+          if (Math.random() > 0.4) {
             sCtx.fillRect(wx, wy, 4, 6);
           }
         }
       }
-      sCtx.fillStyle = "#121d38";
+      sCtx.fillStyle = "#0e1320";
     }
 
     skyTex.update();
     skyMat.emissiveTexture = skyTex;
     skyDome.material = skyMat;
 
-    // B. BRIGHT LIGHT-COLORED REFLECTIVE STADIUM FLOOR
+    // B. REFLECTIVE TRON CYBER ARENA FLOOR (Reference Image Inspired)
     const ground = MeshBuilder.CreateGround(
       "ReflectiveStadiumFloor",
       { width: arenaSize, height: arenaSize, subdivisions: 4 },
       this.scene
     );
 
-    const groundMat = new StandardMaterial("LightFloorMat", this.scene);
-    groundMat.diffuseColor = new Color3(0.92, 0.94, 0.98); // Bright silver/white
-    groundMat.specularColor = new Color3(1.0, 1.0, 1.0); // Intense high-gloss reflections
-    groundMat.specularPower = 64;
-    groundMat.emissiveColor = new Color3(0.24, 0.28, 0.38); // Self-illuminated bright ground
+    const groundMat = new StandardMaterial("TronFloorMat", this.scene);
+    groundMat.diffuseColor = new Color3(0.72, 0.78, 0.88); // Crisp high-contrast metallic base
+    groundMat.specularColor = new Color3(1.0, 1.0, 1.0); // Glossy wet reflections
+    groundMat.specularPower = 28;
+    groundMat.emissiveColor = new Color3(0.18, 0.22, 0.30); // Self-illuminated circuit clarity
 
-    // High-resolution light titanium-silver procedural floor texture
-    const groundTex = new DynamicTexture("LightFloorTex", 1024, this.scene, true);
+    // High-resolution procedural Tron circuit floor texture
+    const groundTex = new DynamicTexture("TronFloorTex", 1024, this.scene, true);
     const gCtx = groundTex.getContext() as CanvasRenderingContext2D;
 
-    // Light silver-white titanium floor base
-    gCtx.fillStyle = "#e5edf8";
+    // 1. Sleek metallic slate/titanium floor base
+    gCtx.fillStyle = "#1e2638";
     gCtx.fillRect(0, 0, 1024, 1024);
 
-    // Subtle dark high-contrast cyber grid tiles
-    gCtx.strokeStyle = "rgba(40, 70, 120, 0.22)";
+    // 2. Subtle high-tech modular floor panel seams
+    gCtx.strokeStyle = "rgba(40, 60, 95, 0.55)";
     gCtx.lineWidth = 2.0;
     for (let p = 0; p <= 1024; p += 64) {
       gCtx.beginPath();
@@ -198,24 +240,63 @@ export class PrototypeScene {
       gCtx.stroke();
     }
 
-    // Concentric Luminous Battle Arena Rings
-    gCtx.strokeStyle = "rgba(0, 180, 255, 0.85)";
+    // 3. Glowing Tron Cyan Circuit Lines with 90° Angular Bends (Directly matching reference image)
+    gCtx.strokeStyle = "#00f0ff";
+    gCtx.shadowColor = "rgba(0, 240, 255, 0.85)";
+    gCtx.shadowBlur = 12;
+    gCtx.lineWidth = 4.5;
+
+    // Main longitudinal runway circuit tracks
+    const circuitOffsets = [160, 280, 400, 624, 744, 864];
+    circuitOffsets.forEach((cx, idx) => {
+      gCtx.beginPath();
+      gCtx.moveTo(cx, 0);
+      gCtx.lineTo(cx, 320 + (idx % 3) * 60);
+      gCtx.lineTo(cx + ((idx % 2 === 0) ? 36 : -36), 360 + (idx % 3) * 60);
+      gCtx.lineTo(cx + ((idx % 2 === 0) ? 36 : -36), 660 + (idx % 3) * 50);
+      gCtx.lineTo(cx, 700 + (idx % 3) * 50);
+      gCtx.lineTo(cx, 1024);
+      gCtx.stroke();
+    });
+
+    // 4. Illuminated Central Runway Dash Markers (--- --- ---)
+    gCtx.strokeStyle = "#ffffff";
+    gCtx.shadowColor = "rgba(0, 240, 255, 0.9)";
+    gCtx.shadowBlur = 14;
     gCtx.lineWidth = 6;
+    for (let dy = 20; dy < 1024; dy += 60) {
+      gCtx.beginPath();
+      gCtx.moveTo(512, dy);
+      gCtx.lineTo(512, dy + 32);
+      gCtx.stroke();
+    }
+
+    // 5. Concentric Luminous Combat Rings & Perimeter Borders
+    gCtx.shadowBlur = 16;
+    gCtx.strokeStyle = "#00f0ff";
+    gCtx.lineWidth = 5;
     gCtx.beginPath();
-    gCtx.arc(512, 512, 120, 0, Math.PI * 2);
+    gCtx.arc(512, 512, 130, 0, Math.PI * 2);
     gCtx.stroke();
 
-    gCtx.strokeStyle = "rgba(255, 0, 128, 0.75)";
-    gCtx.lineWidth = 6;
+    // Red Team / Crimson Combat Ring
+    gCtx.strokeStyle = "#ff2a4b";
+    gCtx.shadowColor = "rgba(255, 42, 75, 0.85)";
+    gCtx.lineWidth = 5;
     gCtx.beginPath();
-    gCtx.arc(512, 512, 280, 0, Math.PI * 2);
+    gCtx.arc(512, 512, 290, 0, Math.PI * 2);
     gCtx.stroke();
 
-    gCtx.strokeStyle = "rgba(0, 200, 255, 0.95)";
-    gCtx.lineWidth = 10;
+    // Outer Perimeter Boundary Tron Ring
+    gCtx.strokeStyle = "#00f0ff";
+    gCtx.shadowColor = "rgba(0, 240, 255, 0.95)";
+    gCtx.lineWidth = 8;
     gCtx.beginPath();
-    gCtx.arc(512, 512, 470, 0, Math.PI * 2);
+    gCtx.arc(512, 512, 475, 0, Math.PI * 2);
     gCtx.stroke();
+
+    // Reset shadow blur
+    gCtx.shadowBlur = 0;
 
     groundTex.update();
     groundMat.diffuseTexture = groundTex;
