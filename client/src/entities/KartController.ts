@@ -19,18 +19,18 @@ export interface KartTuning {
 }
 
 export const DEFAULT_KART_TUNING: KartTuning = {
-  maxForwardSpeed: 32.0,       // ~115 km/h thrilling cruising speed
-  maxReverseSpeed: 12.0,
-  boostMultiplier: 1.45,       // ~165 km/h hyper-boost speed
-  acceleration: 35.0,          // Instant punchy throttle response
-  deceleration: 16.0,          // Natural rolling friction
-  braking: 48.0,               // High-response braking
-  turnRate: 2.75,              // Razor-sharp steering agility
-  steeringSmoothing: 12.0,     // Direct, zero-lag steering response
-  driftTurnMultiplier: 1.65,   // Satisfying power-slide rotation
+  maxForwardSpeed: 26.0,       // Reduced slightly for better control (~94 km/h)
+  maxReverseSpeed: 10.0,
+  boostMultiplier: 1.35,       // ~127 km/h boosted speed
+  acceleration: 30.0,          // Responsive, smooth acceleration
+  deceleration: 14.0,          // Natural rolling friction
+  braking: 45.0,               // High-response braking
+  turnRate: 2.65,              // Agile steering
+  steeringSmoothing: 12.0,     // Direct zero-lag steering response
+  driftTurnMultiplier: 1.60,   // Power-slide rotation
   lateralFriction: 0.86,       // Solid high-speed asphalt grip
-  driftLateralFriction: 0.93,  // Smooth, controllable lateral drift slide
-  maxBankingRoll: 0.22,        // Dramatic dynamic chassis lean
+  driftLateralFriction: 0.93,  // Smooth lateral drift slide
+  maxBankingRoll: 0.20,        // Dynamic chassis lean
 };
 
 export class KartController {
@@ -50,12 +50,21 @@ export class KartController {
   public isDrifting: boolean = false;
   public isBoosting: boolean = false;
 
+  // Boost Energy System (2s duration max, 10s full refill)
+  public readonly maxBoostDuration: number = 2.0;
+  public boostRemaining: number = 2.0;
+  public readonly boostRechargeTime: number = 10.0;
+
   private arenaRadius: number;
 
   constructor(visual: KartVisual, tuning: KartTuning = DEFAULT_KART_TUNING) {
     this.visual = visual;
     this.tuning = tuning;
     this.arenaRadius = (SCENE_CONFIG.DEFAULT_GROUND_SIZE * 0.95) / 2 - 2.5;
+  }
+
+  public getBoostRatio(): number {
+    return Math.max(0, Math.min(1.0, this.boostRemaining / this.maxBoostDuration));
   }
 
   public update(deltaTime: number, input: KartInputState): void {
@@ -67,14 +76,27 @@ export class KartController {
     }
 
     this.isDrifting = input.drift;
-    this.isBoosting = input.boost && this.forwardSpeed > 2.0;
+
+    // Boost uses 2-second tank, refilling in 10 seconds
+    const wantsBoost = input.boost && this.forwardSpeed > 1.5 && this.boostRemaining > 0.05;
+    if (wantsBoost) {
+      this.isBoosting = true;
+      this.boostRemaining = Math.max(0, this.boostRemaining - dt);
+    } else {
+      this.isBoosting = false;
+      // Refill 2 seconds of boost over 10 seconds (0.2s per second)
+      this.boostRemaining = Math.min(
+        this.maxBoostDuration,
+        this.boostRemaining + (this.maxBoostDuration / this.boostRechargeTime) * dt
+      );
+    }
 
     const topSpeed = this.isBoosting
       ? this.tuning.maxForwardSpeed * this.tuning.boostMultiplier
       : this.tuning.maxForwardSpeed;
 
     const accelRate = this.isBoosting
-      ? this.tuning.acceleration * 1.45
+      ? this.tuning.acceleration * 1.4
       : this.tuning.acceleration;
 
     // 1. Throttle / Acceleration & Braking

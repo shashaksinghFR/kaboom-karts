@@ -58,27 +58,36 @@ export class PrototypeScene {
     this.scene.fogDensity = 0.0015;
     this.scene.fogColor = new Color3(0.28, 0.34, 0.50);
 
-    // 1. High-Luminance Stadium Flood Lighting
+    // 1. High-Luminance Stadium Sun & Flood Lighting for Maximum Vehicle Visibility
     const hemiLight = new HemisphericLight(
       "StadiumHemiLight",
       new Vector3(0, 1, 0),
       this.scene
     );
-    hemiLight.intensity = 1.75;
-    hemiLight.diffuse = new Color3(1.0, 1.0, 1.0); // Bright white sunlight
-    hemiLight.groundColor = new Color3(0.65, 0.72, 0.85); // Light silver upward bounce
+    hemiLight.intensity = 2.3;
+    hemiLight.diffuse = new Color3(1.0, 1.0, 1.0); // Ultra bright white ambient
+    hemiLight.groundColor = new Color3(0.75, 0.82, 0.95); // High upward bounce illumination
 
-    const stadiumFloodLight = new DirectionalLight(
-      "StadiumFloodLight",
+    const stadiumSunLight = new DirectionalLight(
+      "StadiumSunLight",
       new Vector3(-0.4, -0.9, -0.3).normalize(),
       this.scene
     );
-    stadiumFloodLight.position = new Vector3(50, 120, 50);
-    stadiumFloodLight.intensity = 2.1;
-    stadiumFloodLight.diffuse = new Color3(1.0, 1.0, 1.0);
+    stadiumSunLight.position = new Vector3(60, 140, 60);
+    stadiumSunLight.intensity = 2.8; // Bright radiant sunlight effect
+    stadiumSunLight.diffuse = new Color3(1.0, 0.98, 0.92);
+
+    // Dynamic Rim Fill Light to make all enemy cars pop from a distance
+    const rimFillLight = new DirectionalLight(
+      "StadiumRimFillLight",
+      new Vector3(0.45, -0.6, 0.45).normalize(),
+      this.scene
+    );
+    rimFillLight.intensity = 1.3;
+    rimFillLight.diffuse = new Color3(0.85, 0.92, 1.0);
 
     // High-performance PCF Shadow Generator
-    this.shadowGenerator = new ShadowGenerator(1024, stadiumFloodLight);
+    this.shadowGenerator = new ShadowGenerator(1024, stadiumSunLight);
     this.shadowGenerator.usePercentageCloserFiltering = true;
     this.shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
 
@@ -92,8 +101,8 @@ export class PrototypeScene {
     // 4. Initialize Remote Opponents Manager
     this.remoteKartManager = new RemoteKartManager(this.scene, this.shadowGenerator);
 
-    // 5. Initialize Weapon System
-    this.weaponSystem = new WeaponSystem(this.scene, 3.0);
+    // 5. Initialize Weapon System (2.0s Cooldown)
+    this.weaponSystem = new WeaponSystem(this.scene, 2.0);
 
     // Load Model
     this.kartVisual.loadModel("/models/hoveringcar.glb");

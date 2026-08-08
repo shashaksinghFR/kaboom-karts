@@ -130,7 +130,7 @@ export class RemoteKartVisual {
 
     if (this.trailMaterial) {
       this.trailMaterial.diffuseColor = color3;
-      this.trailMaterial.emissiveColor = color3.scale(2.5);
+      this.trailMaterial.emissiveColor = color3.scale(3.2);
       this.trailMaterial.alpha = 1.0;
     }
   }
@@ -142,7 +142,7 @@ export class RemoteKartVisual {
       `RemoteLeftTrail_${this.playerName}_${this.modelIndex}`,
       this.leftTailLightAnchor,
       this.scene,
-      0.30, // Thick, bold glowing laser beam
+      0.14, // Slim, sharp glowing laser ribbon
       45,   // Smooth stream
       true
     );
@@ -152,7 +152,7 @@ export class RemoteKartVisual {
       `RemoteRightTrail_${this.playerName}_${this.modelIndex}`,
       this.rightTailLightAnchor,
       this.scene,
-      0.30, // Thick, bold glowing laser beam
+      0.14, // Slim, sharp glowing laser ribbon
       45,   // Smooth stream
       true
     );
@@ -164,16 +164,16 @@ export class RemoteKartVisual {
   private setupNameplate(): void {
     this.nameplateMesh = MeshBuilder.CreatePlane(
       "NameplatePlane",
-      { width: 3.6, height: 0.9 },
+      { width: 4.8, height: 1.3 },
       this.scene
     );
     this.nameplateMesh.parent = this.rootNode;
-    this.nameplateMesh.position.y = 1.65;
+    this.nameplateMesh.position.y = 1.95;
     this.nameplateMesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
     this.nameplateTexture = new DynamicTexture(
       "NameplateTex",
-      { width: 512, height: 128 },
+      { width: 512, height: 140 },
       this.scene,
       true
     );
@@ -193,21 +193,62 @@ export class RemoteKartVisual {
   public updateNameplate(): void {
     const ctx = this.nameplateTexture.getContext() as CanvasRenderingContext2D;
 
-    ctx.clearRect(0, 0, 512, 128);
+    ctx.clearRect(0, 0, 512, 140);
 
-    ctx.font = "bold 44px 'Outfit', sans-serif";
+    // High-Contrast High-Visibility Dark Capsule Badge
+    const borderColor = this.team === "blue" ? "#00f0ff" : this.team === "red" ? "#ff2a4b" : "#00f0ff";
+    const bgColor = this.team === "blue" ? "rgba(8, 26, 46, 0.90)" : this.team === "red" ? "rgba(46, 8, 18, 0.90)" : "rgba(10, 14, 26, 0.90)";
+
+    // Draw Capsule Pill
+    ctx.beginPath();
+    ctx.roundRect(16, 12, 480, 116, 28);
+    ctx.fillStyle = bgColor;
+    ctx.fill();
+
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 4;
+    ctx.shadowColor = borderColor;
+    ctx.shadowBlur = 12;
+    ctx.stroke();
+
+    // Player Name
+    ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
+    ctx.shadowBlur = 6;
+    ctx.font = "bold 46px 'Outfit', sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-
-    ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 3;
-
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(this.playerName, 256, 64);
+    ctx.fillText(this.playerName, 256, 52);
+
+    // Health Bar underneath name
+    const barWidth = 380;
+    const barHeight = 10;
+    const barX = 256 - barWidth / 2;
+    const barY = 92;
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, barWidth, barHeight, 5);
+    ctx.fill();
+
+    const healthRatio = Math.max(0, Math.min(1.0, this.health / 100));
+    const healthFillWidth = barWidth * healthRatio;
+    if (healthFillWidth > 0) {
+      ctx.fillStyle = healthRatio > 0.4 ? (this.team === "red" ? "#ff4757" : "#00f0ff") : "#ff3838";
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, healthFillWidth, barHeight, 5);
+      ctx.fill();
+    }
 
     this.nameplateTexture.update();
+  }
+
+  public setVisible(visible: boolean): void {
+    this.rootNode.setEnabled(visible);
+    if (!visible) {
+      if (this.leftTrailMesh) this.leftTrailMesh.isVisible = false;
+      if (this.rightTrailMesh) this.rightTrailMesh.isVisible = false;
+    }
   }
 
   public async loadKartModel(modelIndex: number): Promise<void> {

@@ -14,7 +14,7 @@ export class SoundManager {
   private sfxGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
 
-  private isMuted: boolean = false;
+  private isMusicMuted: boolean = false;
   private isMusicPlaying: boolean = false;
 
   // Background Music Element
@@ -58,7 +58,7 @@ export class SoundManager {
       this.sfxGain.connect(this.masterGain);
 
       this.musicGain = this.ctx.createGain();
-      this.musicGain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+      this.musicGain.gain.setValueAtTime(0.20, this.ctx.currentTime); // Reduced background music volume
       this.musicGain.connect(this.masterGain);
 
       this.setupEngineSynth();
@@ -66,7 +66,7 @@ export class SoundManager {
       this.initBGM();
       this.loadSoundAssets();
 
-      console.log("🔊 Audio Engine Initialized with Shoot & Boom Assets");
+      console.log("🔊 Audio Engine Initialized (SFX Independent & Music Controlled)");
     } catch (e) {
       console.warn("Web Audio API not supported", e);
     }
@@ -101,7 +101,7 @@ export class SoundManager {
     try {
       this.bgmAudio = new Audio("/audio/backgroundmusic.mp3");
       this.bgmAudio.loop = true;
-      this.bgmAudio.volume = this.isMuted ? 0 : 0.42;
+      this.bgmAudio.volume = this.isMusicMuted ? 0 : 0.20; // Reduced background music volume
       this.bgmAudio.preload = "auto";
       this.bgmAudio.play().then(() => {
         this.isMusicPlaying = true;
@@ -114,10 +114,11 @@ export class SoundManager {
   }
 
   public ensureBGMPlaying(): void {
-    if (this.isMuted) return;
+    if (this.isMusicMuted) return;
     if (!this.bgmAudio) {
       this.initBGM();
     } else if (this.bgmAudio.paused) {
+      this.bgmAudio.volume = 0.20;
       this.bgmAudio.play().then(() => {
         this.isMusicPlaying = true;
       }).catch(() => {});
@@ -199,11 +200,11 @@ export class SoundManager {
 
     // Increased target volume for rich acceleration feel
     const targetVol = 0.038 + speedRatio * 0.055 + (isAccelerating ? 0.045 : (isBraking ? 0.01 : 0));
-    this.engineGain.gain.setTargetAtTime(this.isMuted ? 0 : targetVol, now, 0.06);
+    this.engineGain.gain.setTargetAtTime(targetVol, now, 0.06);
 
     if (this.driftNoiseGain && this.driftFilter) {
       if (isDrifting && speedKph > 15) {
-        this.driftNoiseGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.16, now, 0.05);
+        this.driftNoiseGain.gain.setTargetAtTime(0.16, now, 0.05);
         this.driftFilter.frequency.setTargetAtTime(1100 + speedRatio * 700, now, 0.05);
       } else {
         this.driftNoiseGain.gain.setTargetAtTime(0.0, now, 0.08);
@@ -214,7 +215,6 @@ export class SoundManager {
   // 1. Play Shoot Sound (using shoot.mp3 asset with high-performance buffer)
   public playShoot(): void {
     this.init();
-    if (this.isMuted) return;
 
     if (this.ctx && this.sfxGain && this.shootBuffer) {
       try {
@@ -261,7 +261,6 @@ export class SoundManager {
   // 2. Play Heavy Blast Sound (using boom.mp3 asset with high-performance buffer)
   public playExplosion(): void {
     this.init();
-    if (this.isMuted) return;
 
     if (this.ctx && this.sfxGain && this.boomBuffer) {
       try {
@@ -319,7 +318,7 @@ export class SoundManager {
   // 3. Countdown Beep (Digit beep on 5..1, Victory GO chime on 0)
   public playCountdown(count: number): void {
     this.init();
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (!this.ctx || !this.sfxGain) return;
 
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
@@ -357,19 +356,20 @@ export class SoundManager {
   }
 
   public toggleMute(): boolean {
-    this.isMuted = !this.isMuted;
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 0.85, this.ctx.currentTime);
+    this.isMusicMuted = !this.isMusicMuted;
+    if (this.musicGain && this.ctx) {
+      this.musicGain.gain.setValueAtTime(this.isMusicMuted ? 0 : 0.20, this.ctx.currentTime);
     }
     if (this.bgmAudio) {
-      this.bgmAudio.volume = this.isMuted ? 0 : 0.42;
-      if (this.isMuted) {
+      this.bgmAudio.volume = this.isMusicMuted ? 0 : 0.20;
+      if (this.isMusicMuted) {
         this.bgmAudio.pause();
       } else {
         this.bgmAudio.play().catch(() => {});
       }
     }
-    return this.isMuted;
+    // Keep masterGain and sfxGain fully active so engine & weapon sound effects always play!
+    return this.isMusicMuted;
   }
 }
 

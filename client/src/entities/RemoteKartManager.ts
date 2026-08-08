@@ -57,6 +57,10 @@ export class RemoteKartManager {
       remoteKart.targetRoll = player.roll;
       remoteKart.speedKph = player.speedKph || 0;
       remoteKart.setHealth(player.health);
+
+      // Immediately hide vehicle when player gets shot down
+      const isAlive = !player.eliminated && (player.health > 0);
+      remoteKart.setVisible(isAlive);
     });
 
     // Remove departed players

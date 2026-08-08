@@ -84,7 +84,7 @@ export class KartVisual implements IKartVisual {
     const defaultColor = getPlayerColor(this.colorIndex);
     this.trailMaterial = new StandardMaterial("TailTrailMat", this.scene);
     this.trailMaterial.diffuseColor = defaultColor.color3;
-    this.trailMaterial.emissiveColor = defaultColor.color3.scale(2.5);
+    this.trailMaterial.emissiveColor = defaultColor.color3.scale(3.2);
     this.trailMaterial.disableLighting = true;
     this.trailMaterial.alpha = 1.0; // 100% Opaque solid laser ribbon
     this.trailMaterial.backFaceCulling = false;
@@ -97,7 +97,7 @@ export class KartVisual implements IKartVisual {
       "LeftTailTrail",
       this.leftTailLightAnchor,
       this.scene,
-      0.30, // Thick, bold glowing laser beam
+      0.14, // Slim, sharp glowing laser ribbon
       45,   // Smooth stream
       true
     );
@@ -107,7 +107,7 @@ export class KartVisual implements IKartVisual {
       "RightTailTrail",
       this.rightTailLightAnchor,
       this.scene,
-      0.30, // Thick, bold glowing laser beam
+      0.14, // Slim, sharp glowing laser ribbon
       45,   // Smooth stream
       true
     );
@@ -131,7 +131,7 @@ export class KartVisual implements IKartVisual {
 
     if (this.trailMaterial) {
       this.trailMaterial.diffuseColor = color3;
-      this.trailMaterial.emissiveColor = color3.scale(2.5);
+      this.trailMaterial.emissiveColor = color3.scale(3.2);
       this.trailMaterial.alpha = 1.0;
     }
   }
@@ -331,7 +331,15 @@ export class KartVisual implements IKartVisual {
 
   public setBoostEffect(active: boolean): void {
     if (this.trailMaterial) {
-      this.trailMaterial.alpha = active ? 0.6 : 0.38;
+      this.trailMaterial.alpha = 1.0;
+    }
+  }
+
+  public setVisible(visible: boolean): void {
+    this.rootNode.setEnabled(visible);
+    if (!visible) {
+      if (this.leftTrailMesh) this.leftTrailMesh.isVisible = false;
+      if (this.rightTrailMesh) this.rightTrailMesh.isVisible = false;
     }
   }
 

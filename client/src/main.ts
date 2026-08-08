@@ -50,14 +50,14 @@ window.addEventListener("DOMContentLoaded", async () => {
   const hudAudioToggle = document.getElementById("hud-audio-toggle");
   const hudAudioText = document.getElementById("hud-audio-text");
 
-  const syncAudioUI = (isMuted: boolean) => {
-    if (audioStatusText) audioStatusText.textContent = isMuted ? "AUDIO: OFF" : "AUDIO: ON";
-    if (hudAudioText) hudAudioText.textContent = isMuted ? "SOUND: OFF" : "SOUND: ON";
+  const syncAudioUI = (isMusicMuted: boolean) => {
+    if (audioStatusText) audioStatusText.textContent = isMusicMuted ? "MUSIC: OFF" : "MUSIC: ON";
+    if (hudAudioText) hudAudioText.textContent = isMusicMuted ? "MUSIC: OFF" : "MUSIC: ON";
   };
 
   const handleAudioToggle = () => {
-    const isMuted = soundManager.toggleMute();
-    syncAudioUI(isMuted);
+    const isMusicMuted = soundManager.toggleMute();
+    syncAudioUI(isMusicMuted);
   };
 
   audioToggleBtn?.addEventListener("click", handleAudioToggle);
@@ -158,16 +158,19 @@ window.addEventListener("DOMContentLoaded", async () => {
       if (newPhase === "countdown") {
         lobbyUI.showScreen("game");
         lobbyUI.showCountdown(state.countdownTimer);
+        prototypeScene.kartVisual.setVisible(true);
         hasSetInitialSpawn = false;
         lastCountdownTick = -1;
       } else if (newPhase === "playing") {
         lobbyUI.showScreen("game");
         lobbyUI.hideCountdown();
+        prototypeScene.kartVisual.setVisible(true);
         soundManager.playCountdown(0); // High GO! chime
         soundManager.ensureBGMPlaying();
       } else if (newPhase === "lobby") {
         lobbyUI.showScreen("lobby");
         lobbyUI.hideCountdown();
+        prototypeScene.kartVisual.setVisible(true);
         hasSetInitialSpawn = false;
       } else if (newPhase === "gameover") {
         const myPlayer = state.players?.get(networkClient.localSessionId);
@@ -198,6 +201,7 @@ window.addEventListener("DOMContentLoaded", async () => {
           prototypeScene.kartVisual.setPlayerColor(myPlayer.colorIndex, myPlayer.team);
           const chosenModel = myPlayer.kartModelIndex ?? myPlayer.slotIndex ?? 0;
           prototypeScene.kartVisual.loadKartModel(chosenModel);
+          prototypeScene.kartVisual.setVisible(true);
           hasSetInitialSpawn = true;
         }
       }
@@ -221,7 +225,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     hud.addKillfeedItem(data.killerName || "Rival", data.eliminatedName || "Racer");
 
     if (data.eliminatedId === networkClient.localSessionId) {
-      // Local player was shot down!
+      // Local player was shot down - immediately hide car & trigger explosion!
+      prototypeScene.kartVisual.setVisible(false);
       prototypeScene.weaponSystem.spawnExplosion(prototypeScene.kartController.position.clone());
       hud.showShotDownModal(data.killerName || "Rival Racer");
     } else if (data.killerId === networkClient.localSessionId) {
