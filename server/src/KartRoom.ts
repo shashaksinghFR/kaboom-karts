@@ -29,9 +29,24 @@ export class KartRoom extends Room<KartRoomState> {
     this.onMessage("selectKart", (client, data: { kartModelIndex: number }) => {
       const player = this.state.players.get(client.sessionId);
       if (player && this.state.matchPhase === "lobby") {
-        const idx = Math.max(0, Math.min(9, Math.floor(data.kartModelIndex)));
-        player.kartModelIndex = idx;
-        console.log(`🏎️ ${player.name} (${client.sessionId}) locked in Kart Model #${idx + 1}`);
+        const requestedIdx = Math.max(0, Math.min(9, Math.floor(data.kartModelIndex)));
+        
+        // Enforce exclusive kart locking: check if another racer already locked in this kart
+        let isTakenByOther = false;
+        let takenByName = "";
+        this.state.players.forEach((otherPlayer, otherSessionId) => {
+          if (otherSessionId !== client.sessionId && otherPlayer.kartModelIndex === requestedIdx) {
+            isTakenByOther = true;
+            takenByName = otherPlayer.name;
+          }
+        });
+
+        if (isTakenByOther) {
+          client.send("error", { message: `This kart is already locked in by ${takenByName}! Please select a different kart.` });
+        } else {
+          player.kartModelIndex = requestedIdx;
+          console.log(`🏎️ ${player.name} (${client.sessionId}) locked in Kart Model #${requestedIdx + 1}`);
+        }
       }
     });
 
@@ -165,7 +180,11 @@ export class KartRoom extends Room<KartRoomState> {
 
   onJoin(client: Client, options: { name?: string }) {
     const existingSlots = new Set<number>();
-    this.state.players.forEach((p) => existingSlots.add(p.slotIndex));
+    const existingKarts = new Set<number>();
+    this.state.players.forEach((p) => {
+      existingSlots.add(p.slotIndex);
+      existingKarts.add(p.kartModelIndex);
+    });
 
     // Find first available slot (0 to 9)
     let slotIndex = 0;
@@ -176,13 +195,22 @@ export class KartRoom extends Room<KartRoomState> {
       }
     }
 
+    // Find first available free kart model (0 to 9)
+    let kartModelIndex = slotIndex;
+    for (let i = 0; i < this.maxClients; i++) {
+      if (!existingKarts.has(i)) {
+        kartModelIndex = i;
+        break;
+      }
+    }
+
     const isHost = this.state.players.size === 0;
     const player = new KartPlayerState();
     player.id = client.sessionId;
     player.name = (options.name?.trim() || `Racer ${slotIndex + 1}`).substring(0, 16);
     player.slotIndex = slotIndex;
     player.colorIndex = slotIndex; // 1-to-1 matching distinct color
-    player.kartModelIndex = slotIndex; // Default to slot's model (0-9)
+    player.kartModelIndex = kartModelIndex; // Assign unique free kart model
     player.isHost = isHost;
     player.isReady = isHost; // Host is auto-ready
 

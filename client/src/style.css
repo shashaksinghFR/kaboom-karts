@@ -696,6 +696,20 @@ html, body {
   background: rgba(18, 28, 54, 0.95);
 }
 
+.kart-card.taken {
+  opacity: 0.45;
+  filter: grayscale(0.75);
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+}
+
+.kart-card.taken:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(12, 18, 34, 0.75);
+}
+
 .kart-card-header {
   display: flex;
   align-items: center;
@@ -721,13 +735,24 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 38px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
+  height: 68px;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.07) 0%, rgba(0, 0, 0, 0.45) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 4px;
 }
 
-.kart-icon-label {
-  font-size: 1.4rem;
+.kart-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.7));
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.kart-card:hover:not(.taken) .kart-card-img {
+  transform: scale(1.08) translateY(-2px);
 }
 
 .kart-details {
@@ -789,7 +814,7 @@ html, body {
 
 .btn-lock-kart {
   width: 100%;
-  padding: 5px 8px;
+  padding: 6px 8px;
   border-radius: 6px;
   font-family: var(--font-mono);
   font-size: 0.65rem;
@@ -799,6 +824,9 @@ html, body {
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-lock-kart.locked {
@@ -806,6 +834,14 @@ html, body {
   color: #040814;
   border-color: var(--kart-accent, var(--accent-cyan));
   font-weight: 900;
+}
+
+.btn-lock-kart.taken {
+  background: rgba(255, 51, 85, 0.12);
+  color: #ff8899;
+  border-color: rgba(255, 51, 85, 0.25);
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ==========================================================================

@@ -40,6 +40,8 @@ export class LobbyUI {
 
   // Selected Kart State
   public selectedKartIndex: number = 0;
+  private latestPlayersMap: any = null;
+  private localSessionId: string = "";
 
   // Callbacks
   public onCreateRoomCallback?: (playerName: string) => void;
@@ -94,7 +96,7 @@ export class LobbyUI {
     window.addEventListener("orientationchange", () => this.checkOrientation());
   }
 
-  private renderKartGallery(): void {
+  public renderKartGallery(): void {
     if (!this.kartGallery) return;
 
     let html = "";
@@ -102,17 +104,40 @@ export class LobbyUI {
       const isSelected = index === this.selectedKartIndex;
       const numStr = (index + 1).toString().padStart(2, "0");
 
+      // Check if this kart is locked in by another player in the room
+      let takenByPlayer: any = null;
+      if (this.latestPlayersMap) {
+        this.latestPlayersMap.forEach((player: any) => {
+          if (player.id !== this.localSessionId && player.kartModelIndex === index) {
+            takenByPlayer = player;
+          }
+        });
+      }
+      const isTaken = takenByPlayer !== null;
+
+      let cardClass = "kart-card";
+      let btnLabel = "SELECT KART";
+      let btnClass = "btn-lock-kart";
+
+      if (isSelected) {
+        cardClass += " selected";
+        btnLabel = "LOCKED IN";
+        btnClass += " locked";
+      } else if (isTaken) {
+        cardClass += " taken disabled";
+        btnLabel = `TAKEN (${takenByPlayer.name.substring(0, 8)})`;
+        btnClass += " taken";
+      }
+
       html += `
-        <div class="kart-card ${isSelected ? "selected" : ""}" data-kart-index="${index}" style="--kart-accent: ${kart.accentColor}">
+        <div class="${cardClass}" data-kart-index="${index}" data-taken="${isTaken}" style="--kart-accent: ${kart.accentColor}">
           <div class="kart-card-header">
             <span class="kart-num">#${numStr}</span>
             <span class="kart-accent-dot"></span>
           </div>
 
           <div class="kart-visual-preview">
-            <div class="kart-silhouette">
-              <span class="kart-icon-label">🏎️</span>
-            </div>
+            <img class="kart-card-img" src="${kart.imageUrl}" alt="${kart.name}" loading="lazy" />
           </div>
 
           <div class="kart-details">
@@ -141,8 +166,8 @@ export class LobbyUI {
             </div>
           </div>
 
-          <button class="btn-lock-kart ${isSelected ? "locked" : ""}" data-kart-index="${index}">
-            <span>${isSelected ? "LOCKED IN" : "SELECT KART"}</span>
+          <button class="${btnClass}" data-kart-index="${index}" ${isTaken ? "disabled" : ""}>
+            <span>${btnLabel}</span>
           </button>
         </div>
       `;
@@ -153,7 +178,10 @@ export class LobbyUI {
     // Attach click listeners to cards and buttons
     const cards = this.kartGallery.querySelectorAll(".kart-card");
     cards.forEach((card) => {
-      card.addEventListener("click", (e) => {
+      card.addEventListener("click", () => {
+        const isTaken = card.getAttribute("data-taken") === "true";
+        if (isTaken) return; // Block selecting taken karts
+
         const idx = parseInt(card.getAttribute("data-kart-index") || "0", 10);
         this.selectKart(idx);
       });
@@ -161,6 +189,20 @@ export class LobbyUI {
   }
 
   public selectKart(index: number): void {
+    // Prevent selecting if already taken by another player
+    if (this.latestPlayersMap) {
+      let isTakenByOther = false;
+      this.latestPlayersMap.forEach((player: any) => {
+        if (player.id !== this.localSessionId && player.kartModelIndex === index) {
+          isTakenByOther = true;
+        }
+      });
+      if (isTakenByOther) {
+        console.warn("⚠️ Kart is already taken by another player.");
+        return;
+      }
+    }
+
     const safeIdx = Math.max(0, Math.min(KART_CATALOG.length - 1, index));
     this.selectedKartIndex = safeIdx;
     const def = getKartDef(safeIdx);
@@ -333,11 +375,18 @@ export class LobbyUI {
     this.isHost = localPlayer?.isHost || false;
     this.isReadyState = localPlayer?.isReady || false;
 
+    this.latestPlayersMap = playersMap;
+    this.localSessionId = localSessionId;
+
     // Sync selected kart index from server state
-    if (localPlayer && localPlayer.kartModelIndex !== undefined && localPlayer.kartModelIndex !== this.selectedKartIndex) {
-      this.selectedKartIndex = localPlayer.kartModelIndex;
-      this.renderKartGallery();
+    if (localPlayer && localPlayer.kartModelIndex !== undefined) {
+      if (localPlayer.kartModelIndex !== this.selectedKartIndex) {
+        this.selectedKartIndex = localPlayer.kartModelIndex;
+      }
     }
+
+    // Re-render gallery to reflect taken/locked karts
+    this.renderKartGallery();
 
     // Update count chip
     if (this.playerCountChip) {

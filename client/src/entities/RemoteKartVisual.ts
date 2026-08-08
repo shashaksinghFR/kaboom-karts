@@ -283,13 +283,11 @@ export class RemoteKartVisual {
       scale = 1.45 / dy;
     }
 
-    // Auto-detect forward axis orientation
-    let forwardRotationY = 0;
-    if (dx > dz * 1.15) {
-      forwardRotationY = -Math.PI / 2;
-    } else {
-      forwardRotationY = 0;
-    }
+    // Auto-detect or use calibrated forward axis orientation
+    const def = getKartDef(this.modelIndex);
+    let forwardRotationY = def.rotationYOffset !== undefined
+      ? def.rotationYOffset
+      : (dx > dz * 1.15 ? -Math.PI / 2 : 0);
 
     const center = min.add(size.scale(0.5));
     this.modelOffsetNode.position = new Vector3(
