@@ -32,6 +32,7 @@ export class KartPlayerState extends Schema {
   @type("string") name = "";
   @type("number") slotIndex = 0;
   @type("number") colorIndex = 0;
+  @type("number") kartModelIndex = 0; // 0 to 9 (kart1 to kart10)
   @type("boolean") isHost = false;
   @type("boolean") isReady = false;
 
@@ -70,7 +71,7 @@ export class KartRoomState extends Schema {
   @type({ map: NetworkMissileState }) missiles = new MapSchema<NetworkMissileState>();
   @type("string") roomCode = "";
   @type("string") matchPhase = "lobby"; // "lobby" | "countdown" | "playing" | "gameover"
-  @type("number") countdownTimer = 3;
+  @type("number") countdownTimer = 5;
   @type("number") roundTimer = 180;
   @type("string") winnerId = "";
   @type("string") winnerName = "";

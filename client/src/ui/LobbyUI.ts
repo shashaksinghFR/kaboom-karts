@@ -1,4 +1,5 @@
 import { PLAYER_COLORS, getPlayerColor } from "../network/constants";
+import { KART_CATALOG, getKartDef } from "../config/karts";
 
 export class LobbyUI {
   // Screens
@@ -22,6 +23,8 @@ export class LobbyUI {
   private displayRoomCode: HTMLElement | null;
   private playerCountChip: HTMLElement | null;
   private slotsGrid: HTMLElement | null;
+  private kartGallery: HTMLElement | null;
+  private currentKartName: HTMLElement | null;
   private btnCopyCode: HTMLButtonElement | null;
   private btnLeaveRoom: HTMLButtonElement | null;
   private btnToggleReady: HTMLButtonElement | null;
@@ -35,11 +38,15 @@ export class LobbyUI {
   private gameoverSubtitle: HTMLElement | null;
   private btnReturnLobby: HTMLButtonElement | null;
 
+  // Selected Kart State
+  public selectedKartIndex: number = 0;
+
   // Callbacks
   public onCreateRoomCallback?: (playerName: string) => void;
   public onJoinRoomCallback?: (roomCode: string, playerName: string) => void;
   public onLeaveRoomCallback?: () => void;
   public onToggleReadyCallback?: () => void;
+  public onSelectKartCallback?: (kartModelIndex: number) => void;
   public onStartGameCallback?: () => void;
   public onReturnToLobbyCallback?: () => void;
 
@@ -65,6 +72,9 @@ export class LobbyUI {
     this.displayRoomCode = document.getElementById("display-room-code");
     this.playerCountChip = document.getElementById("player-count-chip");
     this.slotsGrid = document.getElementById("slots-grid");
+    this.kartGallery = document.getElementById("kart-gallery");
+    this.currentKartName = document.getElementById("current-kart-name");
+
     this.btnCopyCode = document.getElementById("btn-copy-code") as HTMLButtonElement;
     this.btnLeaveRoom = document.getElementById("btn-leave-room") as HTMLButtonElement;
     this.btnToggleReady = document.getElementById("btn-toggle-ready") as HTMLButtonElement;
@@ -77,10 +87,90 @@ export class LobbyUI {
     this.gameoverSubtitle = document.getElementById("gameover-subtitle");
     this.btnReturnLobby = document.getElementById("btn-return-lobby") as HTMLButtonElement;
 
+    this.renderKartGallery();
     this.setupListeners();
     this.checkOrientation();
     window.addEventListener("resize", () => this.checkOrientation());
     window.addEventListener("orientationchange", () => this.checkOrientation());
+  }
+
+  private renderKartGallery(): void {
+    if (!this.kartGallery) return;
+
+    let html = "";
+    KART_CATALOG.forEach((kart, index) => {
+      const isSelected = index === this.selectedKartIndex;
+      const numStr = (index + 1).toString().padStart(2, "0");
+
+      html += `
+        <div class="kart-card ${isSelected ? "selected" : ""}" data-kart-index="${index}" style="--kart-accent: ${kart.accentColor}">
+          <div class="kart-card-header">
+            <span class="kart-num">#${numStr}</span>
+            <span class="kart-accent-dot"></span>
+          </div>
+
+          <div class="kart-visual-preview">
+            <div class="kart-silhouette">
+              <span class="kart-icon-label">🏎️</span>
+            </div>
+          </div>
+
+          <div class="kart-details">
+            <h3 class="kart-name">${kart.name}</h3>
+            <p class="kart-tagline">${kart.tagline}</p>
+
+            <div class="kart-stats-cluster">
+              <div class="stat-row">
+                <span class="stat-name">SPD</span>
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill" style="width: ${kart.speedRating}%;"></div>
+                </div>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">HND</span>
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill" style="width: ${kart.handlingRating}%;"></div>
+                </div>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">ARM</span>
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill" style="width: ${kart.armorRating}%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-lock-kart ${isSelected ? "locked" : ""}" data-kart-index="${index}">
+            <span>${isSelected ? "LOCKED IN" : "SELECT KART"}</span>
+          </button>
+        </div>
+      `;
+    });
+
+    this.kartGallery.innerHTML = html;
+
+    // Attach click listeners to cards and buttons
+    const cards = this.kartGallery.querySelectorAll(".kart-card");
+    cards.forEach((card) => {
+      card.addEventListener("click", (e) => {
+        const idx = parseInt(card.getAttribute("data-kart-index") || "0", 10);
+        this.selectKart(idx);
+      });
+    });
+  }
+
+  public selectKart(index: number): void {
+    const safeIdx = Math.max(0, Math.min(KART_CATALOG.length - 1, index));
+    this.selectedKartIndex = safeIdx;
+    const def = getKartDef(safeIdx);
+
+    if (this.currentKartName) {
+      this.currentKartName.textContent = def.name.toUpperCase();
+    }
+
+    this.renderKartGallery();
+    this.onSelectKartCallback?.(safeIdx);
   }
 
   private setupListeners(): void {
@@ -243,6 +333,12 @@ export class LobbyUI {
     this.isHost = localPlayer?.isHost || false;
     this.isReadyState = localPlayer?.isReady || false;
 
+    // Sync selected kart index from server state
+    if (localPlayer && localPlayer.kartModelIndex !== undefined && localPlayer.kartModelIndex !== this.selectedKartIndex) {
+      this.selectedKartIndex = localPlayer.kartModelIndex;
+      this.renderKartGallery();
+    }
+
     // Update count chip
     if (this.playerCountChip) {
       this.playerCountChip.textContent = `${playerCount} / 10 PLAYERS`;
@@ -264,6 +360,7 @@ export class LobbyUI {
 
       if (p) {
         const isMe = p.id === localSessionId;
+        const kartDef = getKartDef(p.kartModelIndex ?? p.slotIndex ?? 0);
         const statusHtml = p.isReady
           ? `<div class="slot-status-pill ready">READY</div>`
           : `<div class="slot-status-pill waiting">WAITING</div>`;
@@ -278,7 +375,9 @@ export class LobbyUI {
               <div class="slot-avatar" style="color: ${colorDef.hex}; font-weight: 800; font-family: var(--font-mono); font-size: 0.85rem;">P${slot + 1}</div>
               <div class="slot-name-wrap">
                 <div class="slot-pilot-name" title="${p.name}">${p.name} ${isMe ? "(YOU)" : ""}</div>
-                ${p.isHost ? `<span class="slot-role-tag">HOST</span>` : `<span class="slot-role-tag" style="color: ${colorDef.hex};">${colorDef.name.toUpperCase()} TRAIL</span>`}
+                <div class="slot-kart-badge" style="color: ${kartDef.accentColor}; font-size: 0.72rem; font-family: var(--font-mono);">
+                  🏎️ ${kartDef.name}
+                </div>
               </div>
             </div>
             ${statusHtml}

@@ -48,7 +48,7 @@ export class Missile {
     // Build Cyberpunk Rocket Visual
     this.createMissileVisual();
 
-    // Setup glowing rocket trail
+    // Setup sleek rocket trail (reduced length & width)
     this.setupMissileTrail();
   }
 
@@ -60,7 +60,7 @@ export class Missile {
     // 1. Rocket Body Cylinder (along Z axis)
     const body = MeshBuilder.CreateCylinder(
       "MissileBody",
-      { height: 1.1, diameter: 0.22, tessellation: 16 },
+      { height: 0.9, diameter: 0.18, tessellation: 16 },
       this.scene
     );
     body.rotation.x = Math.PI / 2; // Orient along Z axis
@@ -75,11 +75,11 @@ export class Missile {
     // 2. Glowing Conical Warhead / Tip
     const tip = MeshBuilder.CreateCylinder(
       "MissileTip",
-      { height: 0.45, diameterTop: 0.0, diameterBottom: 0.22, tessellation: 16 },
+      { height: 0.35, diameterTop: 0.0, diameterBottom: 0.18, tessellation: 16 },
       this.scene
     );
     tip.rotation.x = Math.PI / 2;
-    tip.position.z = 0.75;
+    tip.position.z = 0.6;
     tip.parent = this.rootNode;
 
     const tipMat = new StandardMaterial("MissileTipMat", this.scene);
@@ -92,10 +92,10 @@ export class Missile {
     // 3. Thruster Exhaust Glow Ring at rear
     const thruster = MeshBuilder.CreateTorus(
       "MissileThruster",
-      { diameter: 0.22, thickness: 0.05, tessellation: 16 },
+      { diameter: 0.18, thickness: 0.04, tessellation: 16 },
       this.scene
     );
-    thruster.position.z = -0.55;
+    thruster.position.z = -0.45;
     thruster.parent = this.rootNode;
 
     const thrusterMat = new StandardMaterial("MissileThrusterMat", this.scene);
@@ -109,20 +109,21 @@ export class Missile {
   private setupMissileTrail(): void {
     const trailAnchor = new TransformNode("MissileTrailAnchor", this.scene);
     trailAnchor.parent = this.rootNode;
-    trailAnchor.position = new Vector3(0, 0, -0.6);
+    trailAnchor.position = new Vector3(0, 0, -0.5);
 
     this.trailMat = new StandardMaterial("MissileTrailMat", this.scene);
     this.trailMat.diffuseColor = new Color3(0.0, 0.9, 1.0);
     this.trailMat.emissiveColor = new Color3(0.0, 0.9, 1.0);
     this.trailMat.disableLighting = true;
-    this.trailMat.alpha = 0.6;
+    this.trailMat.alpha = 0.45;
 
+    // Reduced trail diameter (0.06m) and short length (10 segments)
     this.trailMesh = new TrailMesh(
       "MissileTrail",
       trailAnchor,
       this.scene,
-      0.14,
-      30,
+      0.06,
+      10,
       true
     );
     this.trailMesh.material = this.trailMat;

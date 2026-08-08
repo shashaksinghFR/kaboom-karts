@@ -24,19 +24,26 @@ export class RemoteKartManager {
 
       activeSessionIds.add(sessionId);
 
+      const chosenModelIndex = player.kartModelIndex ?? player.slotIndex ?? 0;
+
       let remoteKart = this.remoteKarts.get(sessionId);
       if (!remoteKart) {
         // Spawn new remote opponent
         remoteKart = new RemoteKartVisual(
           this.scene,
           player.name || "Opponent",
-          player.colorIndex || 0,
-          player.slotIndex || 0,
+          player.colorIndex ?? 0,
+          chosenModelIndex,
           player.isHost || false,
           this.shadowGenerator || undefined
         );
         this.remoteKarts.set(sessionId, remoteKart);
-        console.log(`🏎️ Spawned remote opponent: ${player.name} (${sessionId}) - Slot ${player.slotIndex}`);
+        console.log(`🏎️ Spawned remote opponent: ${player.name} (${sessionId}) - Model #${chosenModelIndex + 1}`);
+      } else {
+        // If player swapped their locked-in vehicle in lobby, update their 3D model
+        if (remoteKart.modelIndex !== chosenModelIndex) {
+          remoteKart.loadKartModel(chosenModelIndex);
+        }
       }
 
       // Update target transforms and live speed
@@ -129,7 +136,7 @@ export class RemoteKartManager {
       targets.push({
         sessionId,
         position: kart.rootNode.position,
-        radius: 1.8, // 1.8m hit radius
+        radius: 1.8,
       });
     });
     return targets;
@@ -141,7 +148,7 @@ export class RemoteKartManager {
       colliders.push({
         sessionId,
         position: kart.rootNode.position,
-        radius: 1.45, // 1.45m collision radius (vehicle width/length)
+        radius: 1.45,
       });
     });
     return colliders;

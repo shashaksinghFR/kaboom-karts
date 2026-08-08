@@ -1,65 +1,63 @@
 /* ==========================================================================
-   KABOOM KARTS - CYBERPUNK GRAND STADIUM CSS DESIGN SYSTEM
+   Kaboom Karts - Cyberpunk Grand Stadium Design Tokens & Global Styles
    ========================================================================== */
 
 :root {
-  /* Color Tokens */
-  --bg-primary: #060913;
-  --bg-surface: #0c1222;
-  --bg-surface-glass: rgba(12, 18, 34, 0.78);
-  --bg-card: rgba(16, 24, 46, 0.85);
+  /* Curated Cyberpunk Palette */
+  --bg-space: #050811;
+  --bg-card: rgba(10, 15, 30, 0.85);
+  --bg-surface-glass: rgba(12, 18, 36, 0.75);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-neon-cyan: rgba(0, 240, 255, 0.4);
+  --border-neon-pink: rgba(255, 0, 127, 0.4);
 
+  /* Primary Neon Accents */
   --accent-cyan: #00f0ff;
   --accent-magenta: #ff007f;
-  --accent-purple: #9d00ff;
   --accent-gold: #ffc700;
   --accent-green: #00ff88;
   --accent-red: #ff3355;
-
-  --text-primary: #f0f4fc;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-neon-cyan: rgba(0, 240, 255, 0.4);
-  --border-neon-magenta: rgba(255, 0, 127, 0.4);
+  --accent-purple: #bf00ff;
 
   /* Typography */
-  --font-main: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --font-main: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  /* Elevation & Glows */
-  --glow-cyan: 0 0 25px rgba(0, 240, 255, 0.35);
-  --glow-magenta: 0 0 25px rgba(255, 0, 127, 0.35);
-  --glow-gold: 0 0 35px rgba(255, 199, 0, 0.45);
-  --glow-red: 0 0 35px rgba(255, 51, 85, 0.45);
+  /* Atmospheric Glows */
+  --glow-cyan: 0 0 25px rgba(0, 240, 255, 0.45);
+  --glow-magenta: 0 0 25px rgba(255, 0, 127, 0.45);
+  --glow-gold: 0 0 25px rgba(255, 199, 0, 0.45);
+  --glow-green: 0 0 25px rgba(0, 255, 136, 0.45);
+  --glow-red: 0 0 25px rgba(255, 51, 85, 0.45);
 }
 
+/* Reset & Viewport Lock */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   user-select: none;
   -webkit-user-select: none;
-  -webkit-touch-callout: none;
 }
 
 html, body {
   width: 100%;
   height: 100%;
-  height: 100dvh;
   overflow: hidden;
-  background-color: var(--bg-primary);
+  background-color: var(--bg-space);
   font-family: var(--font-main);
   color: var(--text-primary);
-  touch-action: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 #app {
   position: relative;
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
   overflow: hidden;
 }
 
@@ -70,26 +68,24 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  outline: none;
   display: block;
+  outline: none;
   z-index: 1;
 }
 
-/* ==========================================================================
-   LANDSCAPE PROMPT OVERLAY
-   ========================================================================== */
+/* Landscape Rotation Advisory Overlay */
 .landscape-prompt-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  background: rgba(6, 9, 19, 0.95);
-  backdrop-filter: blur(16px);
-  z-index: 9999;
+  z-index: 999;
+  background: rgba(4, 7, 16, 0.95);
+  backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px;
   text-align: center;
+  padding: 30px;
   gap: 16px;
 }
 
@@ -98,39 +94,36 @@ html, body {
   height: 64px;
   border: 3px solid var(--accent-cyan);
   border-radius: 12px;
-  animation: rotatePhone 2s ease-in-out infinite alternate;
+  animation: rotateDevice 2.2s infinite ease-in-out;
   box-shadow: var(--glow-cyan);
 }
 
-@keyframes rotatePhone {
-  0% { transform: rotate(0deg); }
+@keyframes rotateDevice {
+  0%, 100% { transform: rotate(0deg); }
   50% { transform: rotate(90deg); }
-  100% { transform: rotate(90deg); }
 }
 
 .landscape-prompt-overlay h2 {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  color: var(--accent-cyan);
+  letter-spacing: 0.08em;
+  color: #fff;
 }
 
 .landscape-prompt-overlay p {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  max-width: 320px;
-  line-height: 1.4;
+  max-width: 380px;
+  line-height: 1.5;
 }
 
 .btn-dismiss-rotate {
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 0.8rem;
-  padding: 8px 18px;
+  padding: 10px 20px;
 }
 
-/* ==========================================================================
-   FULLSCREEN OVERLAY SCREENS
-   ========================================================================== */
+/* Global Screen Overlay Wrapper */
 .overlay-screen {
   position: absolute;
   inset: 0;
@@ -138,60 +131,70 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 24px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 24px);
+  padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 24px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 24px);
   overflow-y: auto;
-  overflow-x: hidden;
 }
 
-.home-backdrop,
-.lobby-backdrop {
+/* Home Background Graphics */
+.home-backdrop {
   position: absolute;
   inset: 0;
   background-image: url("/assets/backgroundhomepage.png");
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
-  filter: brightness(0.4) saturate(1.2);
-  transform: scale(1.04);
+  filter: brightness(0.7) contrast(1.15);
   z-index: -1;
 }
 
-/* ==========================================================================
-   HOME VIEW
-   ========================================================================== */
+.home-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 60% 40%, rgba(4, 7, 16, 0.4) 0%, rgba(4, 7, 16, 0.92) 80%);
+}
+
+.lobby-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(12, 18, 38, 0.85) 0%, rgba(5, 8, 17, 0.96) 100%);
+  z-index: -1;
+}
+
+/* Home Screen Container */
 .home-container {
   width: 100%;
   max-width: 1200px;
-  height: 100%;
-  max-height: 900px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 20px;
+  gap: 36px;
   z-index: 2;
 }
 
+/* Top Navigation */
 .home-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
 }
 
 .brand-badge-large {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  background: rgba(12, 18, 36, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  padding: 10px 20px;
+  border-radius: 14px;
 }
 
-.brand-dot, .control-dot, .audio-dot {
+.brand-dot, .audio-dot, .control-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+}
+
+.brand-dot, .control-dot {
   background: var(--accent-cyan);
   box-shadow: 0 0 10px var(--accent-cyan);
   animation: pulseDot 2s infinite ease-in-out;
@@ -501,19 +504,19 @@ html, body {
 }
 
 /* ==========================================================================
-   LOBBY VIEW (10 SLOTS)
+   LOBBY VIEW (10 SLOTS & VEHICLE GARAGE)
    ========================================================================== */
 .lobby-container {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1180px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   background: var(--bg-card);
   backdrop-filter: blur(24px);
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
-  padding: 24px;
+  padding: 20px 24px;
 }
 
 .lobby-header {
@@ -521,7 +524,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 16px;
+  padding-bottom: 12px;
 }
 
 .lobby-title-wrap {
@@ -531,7 +534,7 @@ html, body {
 }
 
 .lobby-title {
-  font-size: 1.45rem;
+  font-size: 1.4rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   color: #fff;
@@ -539,7 +542,7 @@ html, body {
 
 .count-chip {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 800;
   color: var(--accent-cyan);
   background: rgba(0, 240, 255, 0.12);
@@ -549,9 +552,9 @@ html, body {
 }
 
 .lobby-subtitle {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .room-code-badge {
@@ -560,20 +563,20 @@ html, body {
   gap: 10px;
   background: rgba(6, 9, 19, 0.7);
   border: 1px solid var(--border-neon-cyan);
-  padding: 8px 14px;
+  padding: 6px 14px;
   border-radius: 12px;
 }
 
 .code-label {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--text-muted);
 }
 
 .code-value {
   font-family: var(--font-mono);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: 0.18em;
   color: var(--accent-cyan);
@@ -584,9 +587,9 @@ html, body {
   border: 1px solid var(--border-neon-cyan);
   color: var(--accent-cyan);
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 6px;
   cursor: pointer;
 }
@@ -596,11 +599,236 @@ html, body {
   color: #040814;
 }
 
-/* 10 Slots Grid (2 rows x 5 columns) */
+/* ==========================================================================
+   VEHICLE SELECTION GARAGE GALLERY
+   ========================================================================== */
+.garage-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(6, 9, 19, 0.55);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.garage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.garage-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.garage-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  background: rgba(255, 199, 0, 0.12);
+  border: 1px solid rgba(255, 199, 0, 0.35);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.garage-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fff;
+}
+
+.garage-active-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.garage-active-badge strong {
+  color: var(--accent-cyan);
+}
+
+.kart-gallery {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-cyan) rgba(255, 255, 255, 0.05);
+}
+
+.kart-gallery::-webkit-scrollbar {
+  height: 5px;
+}
+
+.kart-gallery::-webkit-scrollbar-thumb {
+  background: var(--accent-cyan);
+  border-radius: 3px;
+}
+
+.kart-card {
+  flex: 0 0 175px;
+  background: rgba(12, 18, 34, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+}
+
+.kart-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--kart-accent, var(--accent-cyan));
+  background: rgba(16, 24, 46, 0.9);
+}
+
+.kart-card.selected {
+  border-color: var(--kart-accent, var(--accent-cyan));
+  box-shadow: 0 0 16px var(--kart-accent, var(--accent-cyan));
+  background: rgba(18, 28, 54, 0.95);
+}
+
+.kart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kart-num {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.kart-accent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--kart-accent, var(--accent-cyan));
+  box-shadow: 0 0 8px var(--kart-accent, var(--accent-cyan));
+}
+
+.kart-visual-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+}
+
+.kart-icon-label {
+  font-size: 1.4rem;
+}
+
+.kart-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kart-name {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kart-tagline {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.kart-stats-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+}
+
+.stat-name {
+  width: 24px;
+  font-weight: 700;
+}
+
+.stat-bar-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background: var(--kart-accent, var(--accent-cyan));
+}
+
+.btn-lock-kart {
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-lock-kart.locked {
+  background: var(--kart-accent, var(--accent-cyan));
+  color: #040814;
+  border-color: var(--kart-accent, var(--accent-cyan));
+  font-weight: 900;
+}
+
+/* ==========================================================================
+   10 SLOTS ROSTER
+   ========================================================================== */
+.slots-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slots-section-title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
 .slots-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .slot-card {
@@ -608,12 +836,12 @@ html, body {
   background: rgba(6, 9, 19, 0.6);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 10px;
-  min-height: 105px;
+  gap: 8px;
+  min-height: 96px;
   transition: all 0.2s ease;
 }
 
@@ -646,18 +874,19 @@ html, body {
 .slot-body {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .slot-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .slot-name-wrap {
@@ -667,7 +896,7 @@ html, body {
 }
 
 .slot-pilot-name {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: #fff;
   white-space: nowrap;
@@ -677,18 +906,18 @@ html, body {
 
 .slot-role-tag {
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
 
 .slot-status-pill {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 800;
   text-align: center;
-  padding: 3px 0;
-  border-radius: 6px;
+  padding: 2px 0;
+  border-radius: 4px;
 }
 
 .slot-status-pill.ready {
@@ -707,7 +936,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid var(--border-subtle);
-  padding-top: 16px;
+  padding-top: 12px;
   gap: 12px;
 }
 
@@ -719,12 +948,12 @@ html, body {
 
 .btn-ready-toggle {
   width: auto;
-  min-width: 140px;
+  min-width: 130px;
 }
 
 .btn-start-match {
   width: auto;
-  min-width: 210px;
+  min-width: 200px;
 }
 
 /* ==========================================================================
@@ -1162,7 +1391,6 @@ html, body {
   gap: 16px;
 }
 
-/* VICTORY (Gold / Cyan Glow) */
 .modal-card.victory {
   border: 2px solid var(--accent-gold);
   box-shadow: var(--glow-gold);
@@ -1179,7 +1407,6 @@ html, body {
   text-shadow: var(--glow-gold);
 }
 
-/* DEFEAT (Red / Crimson Glow) */
 .modal-card.defeat {
   border: 2px solid var(--accent-red);
   box-shadow: var(--glow-red);
@@ -1235,7 +1462,7 @@ html, body {
 }
 
 /* ==========================================================================
-   MOBILE RESPONSIVENESS & LANDSCAPE TIGHTENING
+   RESPONSIVENESS
    ========================================================================== */
 @media (max-width: 900px) {
   .home-hero {
@@ -1249,7 +1476,7 @@ html, body {
 
   .slots-grid {
     grid-template-columns: repeat(2, 1fr);
-    max-height: 260px;
+    max-height: 220px;
     overflow-y: auto;
   }
 
@@ -1258,7 +1485,7 @@ html, body {
   }
 }
 
-@media (max-height: 520px) {
+@media (max-height: 540px) {
   .home-container {
     gap: 10px;
   }
@@ -1282,13 +1509,28 @@ html, body {
   }
 
   .slot-card {
-    min-height: 75px;
+    min-height: 65px;
+    padding: 5px 8px;
+    gap: 3px;
+  }
+
+  .garage-section {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .kart-card {
+    flex: 0 0 145px;
     padding: 6px 8px;
     gap: 4px;
   }
 
+  .kart-visual-preview {
+    height: 26px;
+  }
+
   .lobby-container {
-    padding: 14px;
-    gap: 10px;
+    padding: 12px 16px;
+    gap: 8px;
   }
 }

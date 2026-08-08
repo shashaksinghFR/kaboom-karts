@@ -5,6 +5,7 @@ export interface PlayerNetData {
   name: string;
   slotIndex: number;
   colorIndex: number;
+  kartModelIndex: number;
   isHost: boolean;
   isReady: boolean;
   x: number;
@@ -181,6 +182,12 @@ export class NetworkClient {
   public toggleReady(): void {
     if (this.room) {
       this.room.send("toggleReady");
+    }
+  }
+
+  public selectKart(kartModelIndex: number): void {
+    if (this.room) {
+      this.room.send("selectKart", { kartModelIndex });
     }
   }
 

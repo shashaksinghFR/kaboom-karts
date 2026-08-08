@@ -14,6 +14,7 @@ import {
 import "@babylonjs/loaders/glTF";
 import { IKartVisual } from "./types";
 import { getPlayerColor } from "../network/constants";
+import { getKartDef } from "../config/karts";
 
 export class KartVisual implements IKartVisual {
   public rootNode: TransformNode;
@@ -24,7 +25,7 @@ export class KartVisual implements IKartVisual {
   private isLoaded: boolean = false;
   private shadowGenerator: ShadowGenerator | null = null;
   public colorIndex: number = 0;
-  public slotIndex: number = 0;
+  public modelIndex: number = 0;
 
   // Visual tilt / banking nodes
   private tiltNode: TransformNode;
@@ -45,7 +46,7 @@ export class KartVisual implements IKartVisual {
 
   // Hover bobbing accumulator
   private hoverTimer: number = 0;
-  public baseHoverHeight: number = 0.5;
+  public baseHoverHeight: number = 0.45;
 
   constructor(scene: Scene, shadowGenerator?: ShadowGenerator) {
     this.scene = scene;
@@ -59,10 +60,9 @@ export class KartVisual implements IKartVisual {
     this.tiltNode = new TransformNode("KartTiltNode", this.scene);
     this.tiltNode.parent = this.rootNode;
 
-    // 3. Visual mesh container with orientation offset
+    // 3. Visual mesh container
     this.visualMeshRoot = new TransformNode("KartVisualMeshRoot", this.scene);
     this.visualMeshRoot.parent = this.tiltNode;
-    this.visualMeshRoot.rotation.y = -Math.PI / 2;
 
     // 4. Model offset node for mathematical center alignment
     this.modelOffsetNode = new TransformNode("ModelOffsetNode", this.scene);
@@ -73,21 +73,19 @@ export class KartVisual implements IKartVisual {
   }
 
   private setupTailLightTrails(): void {
-    // Symmetrically aligned to rear (-Z) exhaust grills
     this.leftTailLightAnchor = new TransformNode("LeftTailLightAnchor", this.scene);
     this.leftTailLightAnchor.parent = this.tiltNode;
-    this.leftTailLightAnchor.position = new Vector3(-0.42, 0.28, -1.35);
+    this.leftTailLightAnchor.position = new Vector3(-0.45, 0.25, -1.4);
 
     this.rightTailLightAnchor = new TransformNode("RightTailLightAnchor", this.scene);
     this.rightTailLightAnchor.parent = this.tiltNode;
-    this.rightTailLightAnchor.position = new Vector3(0.42, 0.28, -1.35);
+    this.rightTailLightAnchor.position = new Vector3(0.45, 0.25, -1.4);
 
-    // Dynamic Trail Material with gentle semi-transparency
     const defaultColor = getPlayerColor(this.colorIndex);
     this.trailMaterial = new StandardMaterial("TailTrailMat", this.scene);
     this.trailMaterial.diffuseColor = defaultColor.color3;
     this.trailMaterial.emissiveColor = defaultColor.color3;
-    this.trailMaterial.disableLighting = true; // Clean laser trail
+    this.trailMaterial.disableLighting = true;
     this.trailMaterial.alpha = 0.38;
     this.trailMaterial.backFaceCulling = false;
   }
@@ -95,13 +93,12 @@ export class KartVisual implements IKartVisual {
   private ensureTrailsActive(): void {
     if (this.trailsInitialized) return;
 
-    // Instantiate TrailMeshes once moving
     this.leftTrailMesh = new TrailMesh(
       "LeftTailTrail",
       this.leftTailLightAnchor,
       this.scene,
-      0.09,
-      40,
+      0.08,
+      35,
       true
     );
     this.leftTrailMesh.material = this.trailMaterial;
@@ -110,8 +107,8 @@ export class KartVisual implements IKartVisual {
       "RightTailTrail",
       this.rightTailLightAnchor,
       this.scene,
-      0.09,
-      40,
+      0.08,
+      35,
       true
     );
     this.rightTrailMesh.material = this.trailMaterial;
@@ -123,36 +120,37 @@ export class KartVisual implements IKartVisual {
     this.colorIndex = colorIndex;
     const colorDef = getPlayerColor(colorIndex);
 
-    // Keep car body original, only update trail color!
     if (this.trailMaterial) {
       this.trailMaterial.diffuseColor = colorDef.color3;
       this.trailMaterial.emissiveColor = colorDef.color3;
     }
   }
 
-  public async loadSlotModel(slotIndex: number): Promise<void> {
-    this.slotIndex = slotIndex;
-    const slotModelUrl = `/models/kart_${slotIndex}.glb`;
-    const defaultModelUrl = "/models/hoveringcar.glb";
+  public async loadKartModel(modelIndex: number): Promise<void> {
+    this.modelIndex = modelIndex;
+    const def = getKartDef(modelIndex);
+    const primaryUrl = def.modelUrl;
+    const fallbackUrl = "/models/hoveringcar.glb";
 
     try {
-      await this.loadModel(slotModelUrl);
+      await this.loadModel(primaryUrl);
     } catch {
-      await this.loadModel(defaultModelUrl);
+      await this.loadModel(fallbackUrl);
     }
   }
 
-  public async loadModel(modelUrl: string = "/models/hoveringcar.glb"): Promise<void> {
+  public async loadModel(modelUrl: string = "/models/kart1.glb"): Promise<void> {
     try {
-      const result = await SceneLoader.ImportMeshAsync(
-        "",
-        "",
-        modelUrl,
-        this.scene
-      );
+      const result = await SceneLoader.ImportMeshAsync("", "", modelUrl, this.scene);
 
-      // Clean up previous meshes if reloading
+      // Clean up previously loaded meshes
       this.meshes.forEach((m) => m.dispose());
+      this.meshes = [];
+      this.frontLeftWheel = null;
+      this.frontRightWheel = null;
+      this.rearLeftWheel = null;
+      this.rearRightWheel = null;
+
       this.meshes = result.meshes;
 
       // Group all root imported meshes under modelOffsetNode
@@ -185,14 +183,14 @@ export class KartVisual implements IKartVisual {
         }
       });
 
-      // Normalize model size and center bounding box mathematically
+      // Standardize model scale, center, and ground contact
       this.normalizeModelScaleAndOffset();
       this.setPlayerColor(this.colorIndex);
       this.isLoaded = true;
 
-      console.log(`🏎️ Kart model loaded with original textures (${result.meshes.length} meshes)`);
+      console.log(`🏎️ Kart model [${modelUrl}] loaded perfectly (${result.meshes.length} meshes)`);
     } catch (err) {
-      console.warn("⚠️ Failed to load GLB model, generating procedural fallback kart:", err);
+      console.warn(`⚠️ Failed to load GLB model [${modelUrl}], generating procedural fallback:`, err);
       this.createProceduralFallback();
       this.isLoaded = true;
     }
@@ -200,10 +198,9 @@ export class KartVisual implements IKartVisual {
 
   private enhanceModelMaterial(material: any): void {
     if (material instanceof PBRMaterial) {
-      material.directIntensity = 1.25;
-      material.environmentIntensity = 1.0;
+      material.directIntensity = 1.35;
+      material.environmentIntensity = 1.15;
       material.specularIntensity = 1.0;
-
       if (material.albedoTexture) {
         material.albedoTexture.hasAlpha = false;
       }
@@ -212,12 +209,13 @@ export class KartVisual implements IKartVisual {
     }
   }
 
+  // Universal mathematical bounding-box normalizer for all 10 karts
   private normalizeModelScaleAndOffset(): void {
-    // 1. Temporarily reset transforms to pure neutral space for accurate measurement
     this.visualMeshRoot.rotation.set(0, 0, 0);
     this.visualMeshRoot.scaling.set(1, 1, 1);
     this.visualMeshRoot.position.set(0, 0, 0);
     this.modelOffsetNode.position.set(0, 0, 0);
+    this.modelOffsetNode.rotation.set(0, 0, 0);
     this.rootNode.position.set(0, 0, 0);
     this.rootNode.rotation.set(0, 0, 0);
 
@@ -234,28 +232,41 @@ export class KartVisual implements IKartVisual {
     }
 
     const size = max.subtract(min);
-    const maxDimension = Math.max(size.x, size.y, size.z);
+    const dx = size.x;
+    const dy = size.y;
+    const dz = size.z;
 
-    // Target car length ~ 3.2 units in world space
-    const targetLength = 3.2;
-    let scale = 1.0;
-    if (maxDimension > 0.01) {
-      scale = targetLength / maxDimension;
+    // Target uniform vehicle length: 3.3m
+    const targetLength = 3.3;
+    const maxHorizontal = Math.max(dx, dz);
+    let scale = maxHorizontal > 0.01 ? targetLength / maxHorizontal : 1.0;
+
+    // Clamp excessive vertical height (e.g. antennas)
+    if (dy * scale > 1.45) {
+      scale = 1.45 / dy;
     }
 
-    // 2. Center offset in model unrotated space
+    // Auto-detect forward axis orientation
+    let forwardRotationY = 0;
+    if (dx > dz * 1.15) {
+      // Authored pointing along X axis (e.g. kart1 / hoveringcar)
+      forwardRotationY = -Math.PI / 2;
+    } else {
+      // Authored pointing along Z axis
+      forwardRotationY = 0;
+    }
+
+    // Center model at origin with bottom at Y = 0
     const center = min.add(size.scale(0.5));
     this.modelOffsetNode.position = new Vector3(
       -center.x,
-      -min.y, // Align bottom to Y = 0
+      -min.y,
       -center.z
     );
 
-    // 3. Apply scale and forward rotation (-Math.PI / 2)
     this.visualMeshRoot.scaling = new Vector3(scale, scale, scale);
-    this.visualMeshRoot.rotation.y = -Math.PI / 2;
+    this.visualMeshRoot.rotation.y = forwardRotationY;
 
-    // 4. Restore base hover height
     this.rootNode.position = new Vector3(0, this.baseHoverHeight, 0);
   }
 
@@ -278,7 +289,6 @@ export class KartVisual implements IKartVisual {
     if (!this.isLoaded) return;
     this.hoverTimer += deltaTime * 3.5;
 
-    // Activate trails once moving above 2 km/h
     if (Math.abs(speedKph) > 2) {
       this.ensureTrailsActive();
       if (this.leftTrailMesh) this.leftTrailMesh.isVisible = true;

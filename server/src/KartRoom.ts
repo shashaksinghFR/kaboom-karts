@@ -26,6 +26,15 @@ export class KartRoom extends Room<KartRoomState> {
       }
     });
 
+    this.onMessage("selectKart", (client, data: { kartModelIndex: number }) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && this.state.matchPhase === "lobby") {
+        const idx = Math.max(0, Math.min(9, Math.floor(data.kartModelIndex)));
+        player.kartModelIndex = idx;
+        console.log(`🏎️ ${player.name} (${client.sessionId}) locked in Kart Model #${idx + 1}`);
+      }
+    });
+
     this.onMessage("startGame", (client) => {
       const player = this.state.players.get(client.sessionId);
       if (player?.isHost && this.state.matchPhase === "lobby") {
@@ -173,6 +182,7 @@ export class KartRoom extends Room<KartRoomState> {
     player.name = (options.name?.trim() || `Racer ${slotIndex + 1}`).substring(0, 16);
     player.slotIndex = slotIndex;
     player.colorIndex = slotIndex; // 1-to-1 matching distinct color
+    player.kartModelIndex = slotIndex; // Default to slot's model (0-9)
     player.isHost = isHost;
     player.isReady = isHost; // Host is auto-ready
 
@@ -185,7 +195,7 @@ export class KartRoom extends Room<KartRoomState> {
 
     this.state.players.set(client.sessionId, player);
 
-    console.log(`👤 ${player.name} joined room ${this.state.roomCode} (Slot ${slotIndex + 1}, Host: ${isHost})`);
+    console.log(`👤 ${player.name} joined room ${this.state.roomCode} (Slot ${slotIndex + 1}, Host: ${isHost}, Model #${player.kartModelIndex + 1})`);
   }
 
   onLeave(client: Client) {

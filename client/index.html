@@ -66,8 +66,8 @@
                   <span>10 Players Max</span>
                 </div>
                 <div class="feature-pill">
-                  <span class="pill-tag">ARENA</span>
-                  <span>Cyber Stadium</span>
+                  <span class="pill-tag">VEHICLES</span>
+                  <span>10 Unique Karts</span>
                 </div>
                 <div class="feature-pill">
                   <span class="pill-tag">CONTROLS</span>
@@ -131,7 +131,7 @@
         </div>
       </div>
 
-      <!-- VIEW 2: 10-Slot Room Lobby Interface -->
+      <!-- VIEW 2: 10-Slot Room Lobby & Vehicle Garage -->
       <div id="lobby-view" class="overlay-screen" style="display: none;">
         <div class="lobby-backdrop"></div>
 
@@ -143,7 +143,7 @@
                 <h1 class="lobby-title">BATTLE LOBBY</h1>
                 <div id="player-count-chip" class="count-chip">1 / 10 PLAYERS</div>
               </div>
-              <p class="lobby-subtitle">Waiting for racers to join. Minimum 2 players required to launch match.</p>
+              <p class="lobby-subtitle">Choose and lock in your kart model, then ready up for the 3D match.</p>
             </div>
 
             <!-- Room Code Card -->
@@ -156,9 +156,29 @@
             </div>
           </header>
 
+          <!-- VEHICLE SELECTION GARAGE -->
+          <section class="garage-section">
+            <div class="garage-header">
+              <div class="garage-title-wrap">
+                <span class="garage-tag">HANGAR 10</span>
+                <h2 class="garage-title">SELECT & LOCK IN YOUR COMBAT KART</h2>
+              </div>
+              <div id="garage-selected-summary" class="garage-active-badge">
+                CURRENT: <strong id="current-kart-name">APEX PHANTOM</strong> (#01)
+              </div>
+            </div>
+
+            <div id="kart-gallery" class="kart-gallery">
+              <!-- Dynamically populated 10 selectable karts -->
+            </div>
+          </section>
+
           <!-- 10-Player Slots Grid (2x5) -->
-          <div id="slots-grid" class="slots-grid">
-            <!-- Dynamically populated 10 slots -->
+          <div class="slots-section">
+            <div class="slots-section-title">RACER ROSTER</div>
+            <div id="slots-grid" class="slots-grid">
+              <!-- Dynamically populated 10 slots -->
+            </div>
           </div>
 
           <!-- Lobby Action Footer -->

@@ -15,6 +15,7 @@ import {
 } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { getPlayerColor } from "../network/constants";
+import { getKartDef } from "../config/karts";
 
 export class RemoteKartVisual {
   public rootNode: TransformNode;
@@ -25,12 +26,12 @@ export class RemoteKartVisual {
   private isLoaded: boolean = false;
   private shadowGenerator: ShadowGenerator | null = null;
 
-  // Floating Nameplate (Clean white text, true 4:1 aspect ratio, perfectly proportioned)
+  // Floating Nameplate
   private nameplateMesh!: Mesh;
   private nameplateTexture!: DynamicTexture;
   public playerName: string = "Racer";
   public colorIndex: number = 0;
-  public slotIndex: number = 0;
+  public modelIndex: number = 0;
   public health: number = 100;
   public isHost: boolean = false;
 
@@ -42,34 +43,34 @@ export class RemoteKartVisual {
   private trailMaterial!: StandardMaterial;
   private trailsInitialized: boolean = false;
 
-  // Interpolation targets for smooth remote rendering
+  // Interpolation targets
   public targetPosition: Vector3 = Vector3.Zero();
   public targetYaw: number = 0;
   public targetPitch: number = 0;
   public targetRoll: number = 0;
   public speedKph: number = 0;
 
-  // Tilt node for visual banking/pitch
+  // Tilt node
   private tiltNode: TransformNode;
 
   constructor(
     scene: Scene,
     playerName: string,
     colorIndex: number,
-    slotIndex: number = 0,
+    modelIndex: number = 0,
     isHost: boolean = false,
     shadowGenerator?: ShadowGenerator
   ) {
     this.scene = scene;
     this.playerName = playerName;
     this.colorIndex = colorIndex;
-    this.slotIndex = slotIndex;
+    this.modelIndex = modelIndex;
     this.isHost = isHost;
     this.shadowGenerator = shadowGenerator || null;
 
     // 1. Root node
-    this.rootNode = new TransformNode(`RemoteKart_${playerName}_${slotIndex}`, this.scene);
-    this.rootNode.position = new Vector3(0, 0.5, 0);
+    this.rootNode = new TransformNode(`RemoteKart_${playerName}_${modelIndex}`, this.scene);
+    this.rootNode.position = new Vector3(0, 0.45, 0);
     this.targetPosition.copyFrom(this.rootNode.position);
 
     // 2. Tilt node
@@ -79,7 +80,6 @@ export class RemoteKartVisual {
     // 3. Visual mesh container
     this.visualMeshRoot = new TransformNode("RemoteVisualRoot", this.scene);
     this.visualMeshRoot.parent = this.tiltNode;
-    this.visualMeshRoot.rotation.y = -Math.PI / 2;
 
     // 4. Model offset node for centering
     this.modelOffsetNode = new TransformNode("RemoteModelOffset", this.scene);
@@ -91,24 +91,24 @@ export class RemoteKartVisual {
     // 6. Setup Clean Proportionate Nameplate
     this.setupNameplate();
 
-    // 7. Load Model with 100% pristine original textures (or slot-specific model)
-    this.loadSlotModel();
+    // 7. Load Selected Kart Model with perfect normalized dimensions
+    this.loadKartModel(this.modelIndex);
   }
 
   private setupTailLightTrails(): void {
     this.leftTailLightAnchor = new TransformNode("RemoteLeftTailAnchor", this.scene);
     this.leftTailLightAnchor.parent = this.tiltNode;
-    this.leftTailLightAnchor.position = new Vector3(-0.42, 0.28, -1.35);
+    this.leftTailLightAnchor.position = new Vector3(-0.45, 0.25, -1.4);
 
     this.rightTailLightAnchor = new TransformNode("RemoteRightTailAnchor", this.scene);
     this.rightTailLightAnchor.parent = this.tiltNode;
-    this.rightTailLightAnchor.position = new Vector3(0.42, 0.28, -1.35);
+    this.rightTailLightAnchor.position = new Vector3(0.45, 0.25, -1.4);
 
     const playerColor = getPlayerColor(this.colorIndex);
     this.trailMaterial = new StandardMaterial(`RemoteTrailMat_${this.colorIndex}`, this.scene);
     this.trailMaterial.diffuseColor = playerColor.color3;
     this.trailMaterial.emissiveColor = playerColor.color3;
-    this.trailMaterial.disableLighting = true; // Clean vibrant laser trail
+    this.trailMaterial.disableLighting = true;
     this.trailMaterial.alpha = 0.42;
     this.trailMaterial.backFaceCulling = false;
   }
@@ -117,20 +117,20 @@ export class RemoteKartVisual {
     if (this.trailsInitialized) return;
 
     this.leftTrailMesh = new TrailMesh(
-      `RemoteLeftTrail_${this.playerName}_${this.slotIndex}`,
+      `RemoteLeftTrail_${this.playerName}_${this.modelIndex}`,
       this.leftTailLightAnchor,
       this.scene,
-      0.09,
+      0.08,
       35,
       true
     );
     this.leftTrailMesh.material = this.trailMaterial;
 
     this.rightTrailMesh = new TrailMesh(
-      `RemoteRightTrail_${this.playerName}_${this.slotIndex}`,
+      `RemoteRightTrail_${this.playerName}_${this.modelIndex}`,
       this.rightTailLightAnchor,
       this.scene,
-      0.09,
+      0.08,
       35,
       true
     );
@@ -140,7 +140,6 @@ export class RemoteKartVisual {
   }
 
   private setupNameplate(): void {
-    // 3.6m wide by 0.9m high plane (4:1 aspect ratio)
     this.nameplateMesh = MeshBuilder.CreatePlane(
       "NameplatePlane",
       { width: 3.6, height: 0.9 },
@@ -150,7 +149,6 @@ export class RemoteKartVisual {
     this.nameplateMesh.position.y = 1.65;
     this.nameplateMesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
-    // Matching 4:1 texture dimension (512 x 128)
     this.nameplateTexture = new DynamicTexture(
       "NameplateTex",
       { width: 512, height: 128 },
@@ -173,10 +171,8 @@ export class RemoteKartVisual {
   public updateNameplate(): void {
     const ctx = this.nameplateTexture.getContext() as CanvasRenderingContext2D;
 
-    // 100% transparent background
     ctx.clearRect(0, 0, 512, 128);
 
-    // Sharp, crisp text with strong outline for visibility over bright arena
     ctx.font = "bold 44px 'Outfit', sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -192,20 +188,19 @@ export class RemoteKartVisual {
     this.nameplateTexture.update();
   }
 
-  // Load slot-specific model if available (e.g. /models/kart_0.glb ... kart_9.glb or fallback to hoveringcar.glb)
-  private async loadSlotModel(): Promise<void> {
-    const slotModelUrl = `/models/kart_${this.slotIndex}.glb`;
-    const defaultModelUrl = "/models/hoveringcar.glb";
+  public async loadKartModel(modelIndex: number): Promise<void> {
+    this.modelIndex = modelIndex;
+    const def = getKartDef(modelIndex);
+    const primaryUrl = def.modelUrl;
+    const fallbackUrl = "/models/hoveringcar.glb";
 
     try {
-      // First try slot-specific model
-      await this.tryImportMesh(slotModelUrl);
+      await this.tryImportMesh(primaryUrl);
     } catch {
-      // Fallback to default hoveringcar.glb
       try {
-        await this.tryImportMesh(defaultModelUrl);
+        await this.tryImportMesh(fallbackUrl);
       } catch (err) {
-        console.warn("⚠️ Failed to load GLB model, using procedural fallback:", err);
+        console.warn("⚠️ Failed to load remote GLB model, using procedural fallback:", err);
         this.createProceduralFallback();
         this.isLoaded = true;
       }
@@ -214,6 +209,8 @@ export class RemoteKartVisual {
 
   private async tryImportMesh(url: string): Promise<void> {
     const result = await SceneLoader.ImportMeshAsync("", "", url, this.scene);
+
+    this.meshes.forEach((m) => m.dispose());
     this.meshes = result.meshes;
 
     result.meshes.forEach((mesh) => {
@@ -236,13 +233,11 @@ export class RemoteKartVisual {
     this.isLoaded = true;
   }
 
-  // Preserve 100% original model textures and metallic finishes
   private enhanceModelMaterial(material: any): void {
     if (material instanceof PBRMaterial) {
-      material.directIntensity = 1.3;
-      material.environmentIntensity = 1.1;
+      material.directIntensity = 1.35;
+      material.environmentIntensity = 1.15;
       material.specularIntensity = 1.0;
-      // Do NOT tint emissiveColor, keep original car look
       if (material.albedoTexture) {
         material.albedoTexture.hasAlpha = false;
       }
@@ -251,12 +246,15 @@ export class RemoteKartVisual {
     }
   }
 
+  // Universal mathematical bounding-box normalizer for all 10 karts
   private normalizeModelScaleAndOffset(): void {
     this.visualMeshRoot.rotation.set(0, 0, 0);
     this.visualMeshRoot.scaling.set(1, 1, 1);
     this.visualMeshRoot.position.set(0, 0, 0);
     this.modelOffsetNode.position.set(0, 0, 0);
+    this.modelOffsetNode.rotation.set(0, 0, 0);
     this.rootNode.position.set(0, 0, 0);
+    this.rootNode.rotation.set(0, 0, 0);
 
     let min = new Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
     let max = new Vector3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
@@ -271,14 +269,38 @@ export class RemoteKartVisual {
     }
 
     const size = max.subtract(min);
-    const maxDimension = Math.max(size.x, size.y, size.z);
-    const targetLength = 3.2;
-    let scale = maxDimension > 0.01 ? targetLength / maxDimension : 1.0;
+    const dx = size.x;
+    const dy = size.y;
+    const dz = size.z;
+
+    // Target uniform vehicle length: 3.3m
+    const targetLength = 3.3;
+    const maxHorizontal = Math.max(dx, dz);
+    let scale = maxHorizontal > 0.01 ? targetLength / maxHorizontal : 1.0;
+
+    // Clamp excessive vertical height
+    if (dy * scale > 1.45) {
+      scale = 1.45 / dy;
+    }
+
+    // Auto-detect forward axis orientation
+    let forwardRotationY = 0;
+    if (dx > dz * 1.15) {
+      forwardRotationY = -Math.PI / 2;
+    } else {
+      forwardRotationY = 0;
+    }
 
     const center = min.add(size.scale(0.5));
-    this.modelOffsetNode.position = new Vector3(-center.x, -min.y, -center.z);
+    this.modelOffsetNode.position = new Vector3(
+      -center.x,
+      -min.y,
+      -center.z
+    );
+
     this.visualMeshRoot.scaling = new Vector3(scale, scale, scale);
-    this.visualMeshRoot.rotation.y = -Math.PI / 2;
+    this.visualMeshRoot.rotation.y = forwardRotationY;
+
     this.rootNode.position.copyFrom(this.targetPosition);
   }
 

@@ -110,6 +110,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  lobbyUI.onSelectKartCallback = (kartModelIndex: number) => {
+    networkClient.selectKart(kartModelIndex);
+    prototypeScene.kartVisual.loadKartModel(kartModelIndex);
+  };
+
   lobbyUI.onLeaveRoomCallback = () => {
     networkClient.leaveRoom();
     soundManager.stopBackgroundMusic();
@@ -173,14 +178,15 @@ window.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-    // Set local player's spawn transform & assigned trail color & slot model
+    // Set local player's spawn transform & assigned trail color & selected kart model
     if (state.players) {
       const myPlayer = state.players.get(networkClient.localSessionId);
       if (myPlayer) {
         if (!hasSetInitialSpawn && (newPhase === "countdown" || newPhase === "playing")) {
           prototypeScene.setSpawnTransform(myPlayer.x, myPlayer.y, myPlayer.z, myPlayer.yaw);
           prototypeScene.kartVisual.setPlayerColor(myPlayer.colorIndex);
-          prototypeScene.kartVisual.loadSlotModel(myPlayer.slotIndex ?? myPlayer.colorIndex);
+          const chosenModel = myPlayer.kartModelIndex ?? myPlayer.slotIndex ?? 0;
+          prototypeScene.kartVisual.loadKartModel(chosenModel);
           hasSetInitialSpawn = true;
         }
       }
