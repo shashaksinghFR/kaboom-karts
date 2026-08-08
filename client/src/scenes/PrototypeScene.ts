@@ -58,34 +58,32 @@ export class PrototypeScene {
     this.scene.fogDensity = 0.0015;
     this.scene.fogColor = new Color3(0.28, 0.34, 0.50);
 
-    // 1. High-Luminance Solar & Ambient Space Lighting (Crystal Clear Car Visibility)
+    // 1. High-Luminance Stadium Flood Lighting
     const hemiLight = new HemisphericLight(
-      "SpaceHemiLight",
+      "StadiumHemiLight",
       new Vector3(0, 1, 0),
       this.scene
     );
-    hemiLight.intensity = 1.85;
-    hemiLight.diffuse = new Color3(1.0, 1.0, 1.0); // Pure radiant white ambient
-    hemiLight.groundColor = new Color3(0.65, 0.72, 0.85); // Upward reflection from reflective circuit floor
+    hemiLight.intensity = 1.75;
+    hemiLight.diffuse = new Color3(1.0, 1.0, 1.0); // Bright white sunlight
+    hemiLight.groundColor = new Color3(0.65, 0.72, 0.85); // Light silver upward bounce
 
-    // Overhead Radiant Sun Light
-    const sunPosition = new Vector3(45, 120, 45);
     const stadiumFloodLight = new DirectionalLight(
-      "SunDirectionalLight",
-      new Vector3(-0.35, -0.92, -0.35).normalize(),
+      "StadiumFloodLight",
+      new Vector3(-0.4, -0.9, -0.3).normalize(),
       this.scene
     );
-    stadiumFloodLight.position = sunPosition;
-    stadiumFloodLight.intensity = 2.4;
-    stadiumFloodLight.diffuse = new Color3(1.0, 0.98, 0.92);
+    stadiumFloodLight.position = new Vector3(50, 120, 50);
+    stadiumFloodLight.intensity = 2.1;
+    stadiumFloodLight.diffuse = new Color3(1.0, 1.0, 1.0);
 
     // High-performance PCF Shadow Generator
     this.shadowGenerator = new ShadowGenerator(1024, stadiumFloodLight);
     this.shadowGenerator.usePercentageCloserFiltering = true;
     this.shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
 
-    // 2. Build Deep Space Arena & Radiant Sun
-    this.setupSpaceStadiumArena(sunPosition);
+    // 2. Build Bright Luminous Cyberpunk Stadium Arena
+    this.setupBrightStadiumArena();
 
     // 3. Initialize Kart Visual & Controller
     this.kartVisual = new KartVisual(this.scene, this.shadowGenerator);
@@ -113,126 +111,99 @@ export class PrototypeScene {
     this.kartVisual.rootNode.rotation.y = yaw;
   }
 
-  private setupSpaceStadiumArena(sunPos: Vector3): void {
+  private setupBrightStadiumArena(): void {
     const arenaSize = SCENE_CONFIG.DEFAULT_GROUND_SIZE; // 200m
     const arenaRadius = (arenaSize * 0.95) / 2; // ~95m
 
-    // A. Deep Space Skybox Dome with Radiant Stars & Cosmic Nebulae
+    // A. Skybox Dome with Crimson Cyber Nebula & Spire Skyline (Reference Image Inspired)
     const skyDome = MeshBuilder.CreateSphere(
-      "SpaceSkyDome",
-      { diameter: 450, segments: 24, slice: 0.5 },
+      "StadiumSkyDome",
+      { diameter: 390, segments: 24, slice: 0.5 },
       this.scene
     );
     skyDome.position.y = -10;
     skyDome.infiniteDistance = true;
 
-    const skyMat = new StandardMaterial("SpaceSkyMat", this.scene);
+    const skyMat = new StandardMaterial("StadiumSkyMat", this.scene);
     skyMat.backFaceCulling = false;
     skyMat.disableLighting = true;
 
-    const skyTex = new DynamicTexture("SpaceSkyTex", { width: 1024, height: 512 }, this.scene, false);
+    const skyTex = new DynamicTexture("StadiumSkyTex", { width: 1024, height: 512 }, this.scene, false);
     const sCtx = skyTex.getContext() as CanvasRenderingContext2D;
 
-    // Deep Cosmic Space Gradient
-    const spaceGrad = sCtx.createLinearGradient(0, 0, 0, 512);
-    spaceGrad.addColorStop(0.0, "#010206");
-    spaceGrad.addColorStop(0.35, "#040714");
-    spaceGrad.addColorStop(0.70, "#080e28");
-    spaceGrad.addColorStop(0.92, "#121a3e");
-    spaceGrad.addColorStop(1.0, "#1c2654");
-    sCtx.fillStyle = spaceGrad;
+    // Dramatic Crimson Red Nebula Horizon Gradient
+    const skyGrad = sCtx.createLinearGradient(0, 0, 0, 512);
+    skyGrad.addColorStop(0.0, "#080206");
+    skyGrad.addColorStop(0.45, "#24040c");
+    skyGrad.addColorStop(0.70, "#5e0b1c");
+    skyGrad.addColorStop(0.88, "#a3122c");
+    skyGrad.addColorStop(1.0, "#e61c3e");
+    sCtx.fillStyle = skyGrad;
     sCtx.fillRect(0, 0, 1024, 512);
 
-    // Glowing Cosmic Nebulae Clouds (Cyan, Magenta & Deep Violet Gas Clouds)
-    const nebulae = [
-      { x: 220, y: 180, rad: 160, col: "rgba(0, 240, 255, 0.22)" },
-      { x: 740, y: 140, rad: 190, col: "rgba(180, 40, 255, 0.24)" },
-      { x: 480, y: 260, rad: 140, col: "rgba(255, 40, 120, 0.18)" },
-      { x: 920, y: 200, rad: 150, col: "rgba(0, 200, 255, 0.16)" },
-      { x: 120, y: 280, rad: 130, col: "rgba(140, 60, 255, 0.20)" },
-    ];
-
-    nebulae.forEach((neb) => {
-      const g = sCtx.createRadialGradient(neb.x, neb.y, 10, neb.x, neb.y, neb.rad);
-      g.addColorStop(0, neb.col);
-      g.addColorStop(0.6, neb.col.replace("0.", "0.08"));
-      g.addColorStop(1, "rgba(0, 0, 0, 0)");
-      sCtx.fillStyle = g;
+    // Glowing Crimson Nebula Clouds
+    for (let c = 0; c < 12; c++) {
+      const cx = (c * 90) % 1024;
+      const cy = 220 + Math.sin(c * 1.5) * 80;
+      const rad = 140 + (c % 4) * 40;
+      const cGrad = sCtx.createRadialGradient(cx, cy, 10, cx, cy, rad);
+      cGrad.addColorStop(0, "rgba(230, 28, 62, 0.35)");
+      cGrad.addColorStop(0.6, "rgba(160, 18, 44, 0.15)");
+      cGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      sCtx.fillStyle = cGrad;
       sCtx.beginPath();
-      sCtx.arc(neb.x, neb.y, neb.rad, 0, Math.PI * 2);
+      sCtx.arc(cx, cy, rad, 0, Math.PI * 2);
       sCtx.fill();
-    });
+    }
 
-    // 400+ Sparkling Stars & Constellations
-    for (let i = 0; i < 420; i++) {
-      const sx = (i * 37 + (i % 7) * 83) % 1024;
-      const sy = (i * 59 + (i % 11) * 41) % 460;
-      const starSize = Math.random() < 0.85 ? Math.random() * 1.8 + 0.6 : Math.random() * 2.8 + 2.0;
+    // High-Tech Cyber Architecture & Spire Silhouette
+    sCtx.fillStyle = "#0c0f18";
+    
+    // Central Cyber Spire (from reference image)
+    const spireX = 512;
+    sCtx.fillRect(spireX - 16, 512 - 260, 32, 260);
+    sCtx.fillRect(spireX - 8, 512 - 340, 16, 80);
+    sCtx.fillRect(spireX - 3, 512 - 390, 6, 50);
 
-      // Color variation: White, Cyan, Gold, Violet
-      let starColor = "#ffffff";
-      const randType = Math.random();
-      if (randType < 0.25) starColor = "#a0f0ff";
-      else if (randType < 0.45) starColor = "#ffeaa7";
-      else if (randType < 0.60) starColor = "#e0aaff";
+    // Illuminated Spire Rings (Glowing Cyan)
+    sCtx.fillStyle = "#00f0ff";
+    for (let sy = 512 - 370; sy < 500; sy += 18) {
+      sCtx.fillRect(spireX - 14, sy, 28, 4);
+    }
 
-      sCtx.fillStyle = starColor;
+    // Flanking Cyber Megastructures & Horizon Towers
+    sCtx.fillStyle = "#0e1320";
+    for (let bx = 0; bx < 1024; bx += 40) {
+      if (Math.abs(bx - spireX) < 40) continue; // Leave center spire clear
+      const distFromCenter = Math.abs(bx - 512) / 512;
+      const bHeight = 90 + distFromCenter * 130 + Math.sin(bx * 0.08) * 40;
+      const bWidth = 32 + (bx % 16);
+      sCtx.fillRect(bx, 512 - bHeight, bWidth, bHeight);
+
+      // Angled Tron Cyber Line Markings on Buildings (Cyan & Red)
+      sCtx.strokeStyle = (bx % 80 === 0) ? "#ff2a4b" : "#00f0ff";
+      sCtx.lineWidth = 2.5;
       sCtx.beginPath();
-      sCtx.arc(sx, sy, starSize, 0, Math.PI * 2);
-      sCtx.fill();
+      sCtx.moveTo(bx + 4, 512);
+      sCtx.lineTo(bx + 4, 512 - bHeight + 10);
+      sCtx.lineTo(bx + bWidth - 4, 512 - bHeight + 20);
+      sCtx.stroke();
 
-      // Cross flare for large bright stars
-      if (starSize > 2.5) {
-        sCtx.strokeStyle = starColor;
-        sCtx.lineWidth = 0.8;
-        sCtx.beginPath();
-        sCtx.moveTo(sx - starSize * 3, sy);
-        sCtx.lineTo(sx + starSize * 3, sy);
-        sCtx.moveTo(sx, sy - starSize * 3);
-        sCtx.lineTo(sx, sy + starSize * 3);
-        sCtx.stroke();
+      // Lit Cyber Window Grids
+      sCtx.fillStyle = (bx % 80 === 0) ? "rgba(255, 42, 75, 0.9)" : "rgba(0, 240, 255, 0.9)";
+      for (let wy = 512 - bHeight + 25; wy < 500; wy += 16) {
+        for (let wx = bx + 8; wx < bx + bWidth - 8; wx += 10) {
+          if (Math.random() > 0.4) {
+            sCtx.fillRect(wx, wy, 4, 6);
+          }
+        }
       }
+      sCtx.fillStyle = "#0e1320";
     }
 
     skyTex.update();
     skyMat.emissiveTexture = skyTex;
     skyDome.material = skyMat;
-
-    // B. Radiant 3D Celestial Sun Sphere High Above the Field
-    const sunSphere = MeshBuilder.CreateSphere(
-      "RadiantSunCore",
-      { diameter: 22, segments: 24 },
-      this.scene
-    );
-    sunSphere.position.copyFrom(sunPos);
-
-    const sunMat = new StandardMaterial("SunCoreMat", this.scene);
-    sunMat.emissiveColor = new Color3(1.0, 0.98, 0.82); // Blazing white-yellow sun
-    sunMat.diffuseColor = new Color3(1.0, 0.95, 0.75);
-    sunMat.disableLighting = true;
-    sunSphere.material = sunMat;
-
-    // Solar Corona Halo Ring
-    const sunCorona = MeshBuilder.CreateTorus(
-      "SunCoronaRing",
-      { diameter: 34, thickness: 1.8, tessellation: 36 },
-      this.scene
-    );
-    sunCorona.position.copyFrom(sunPos);
-    sunCorona.rotation.x = Math.PI / 4;
-    sunCorona.rotation.y = Math.PI / 6;
-
-    const coronaMat = new StandardMaterial("SunCoronaMat", this.scene);
-    coronaMat.emissiveColor = new Color3(1.0, 0.85, 0.35); // Golden radiant flare
-    coronaMat.disableLighting = true;
-    coronaMat.alpha = 0.85;
-    sunCorona.material = coronaMat;
-
-    // Sun Point Light
-    const sunPointLight = new PointLight("SunPointLight", sunPos, this.scene);
-    sunPointLight.intensity = 2.8;
-    sunPointLight.range = 280;
-    sunPointLight.diffuse = new Color3(1.0, 0.96, 0.85);
 
     // B. REFLECTIVE TRON CYBER ARENA FLOOR (Reference Image Inspired)
     const ground = MeshBuilder.CreateGround(
