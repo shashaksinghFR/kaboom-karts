@@ -116,13 +116,22 @@ export class KartVisual implements IKartVisual {
     this.trailsInitialized = true;
   }
 
-  public setPlayerColor(colorIndex: number): void {
+  public setPlayerColor(colorIndex: number, team?: string): void {
     this.colorIndex = colorIndex;
-    const colorDef = getPlayerColor(colorIndex);
+    let color3: Color3;
+
+    if (team === "blue") {
+      color3 = Color3.FromHexString("#00f0ff");
+    } else if (team === "red") {
+      color3 = Color3.FromHexString("#ff2a2a");
+    } else {
+      const colorDef = getPlayerColor(colorIndex);
+      color3 = colorDef.color3;
+    }
 
     if (this.trailMaterial) {
-      this.trailMaterial.diffuseColor = colorDef.color3;
-      this.trailMaterial.emissiveColor = colorDef.color3;
+      this.trailMaterial.diffuseColor = color3;
+      this.trailMaterial.emissiveColor = color3;
     }
   }
 

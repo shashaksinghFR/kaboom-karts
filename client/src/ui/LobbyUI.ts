@@ -18,6 +18,8 @@ export class LobbyUI {
   private btnCreateRoom: HTMLButtonElement | null;
   private btnJoinRoom: HTMLButtonElement | null;
   private homeErrorMsg: HTMLElement | null;
+  private homeFullscreenBtn: HTMLButtonElement | null;
+  private hudFullscreenBtn: HTMLButtonElement | null;
 
   // Lobby Screen Elements
   private displayRoomCode: HTMLElement | null;
@@ -29,6 +31,10 @@ export class LobbyUI {
   private btnLeaveRoom: HTMLButtonElement | null;
   private btnToggleReady: HTMLButtonElement | null;
   private btnStartGame: HTMLButtonElement | null;
+  private btnModeFfa: HTMLButtonElement | null;
+  private btnModeTeam: HTMLButtonElement | null;
+  private teamModeIndicator: HTMLElement | null;
+  private slotsSectionTitle: HTMLElement | null;
 
   // Game Over Elements
   private gameoverCard: HTMLElement | null;
@@ -38,10 +44,14 @@ export class LobbyUI {
   private gameoverSubtitle: HTMLElement | null;
   private btnReturnLobby: HTMLButtonElement | null;
 
-  // Selected Kart State
+  // Selected Kart State & Performance Caching
   public selectedKartIndex: number = 0;
+  public currentGameMode: "ffa" | "team" = "ffa";
   private latestPlayersMap: any = null;
   private localSessionId: string = "";
+  private lastLobbyHash: string = "";
+  private lastScoreboardHash: string = "";
+  private lastGalleryHash: string = "";
 
   // Callbacks
   public onCreateRoomCallback?: (playerName: string) => void;
@@ -49,6 +59,7 @@ export class LobbyUI {
   public onLeaveRoomCallback?: () => void;
   public onToggleReadyCallback?: () => void;
   public onSelectKartCallback?: (kartModelIndex: number) => void;
+  public onSetGameModeCallback?: (gameMode: "ffa" | "team") => void;
   public onStartGameCallback?: () => void;
   public onReturnToLobbyCallback?: () => void;
 
@@ -70,12 +81,18 @@ export class LobbyUI {
     this.btnCreateRoom = document.getElementById("btn-create-room") as HTMLButtonElement;
     this.btnJoinRoom = document.getElementById("btn-join-room") as HTMLButtonElement;
     this.homeErrorMsg = document.getElementById("home-error-msg");
+    this.homeFullscreenBtn = document.getElementById("home-fullscreen-btn") as HTMLButtonElement;
+    this.hudFullscreenBtn = document.getElementById("hud-fullscreen-toggle") as HTMLButtonElement;
 
     this.displayRoomCode = document.getElementById("display-room-code");
     this.playerCountChip = document.getElementById("player-count-chip");
     this.slotsGrid = document.getElementById("slots-grid");
     this.kartGallery = document.getElementById("kart-gallery");
     this.currentKartName = document.getElementById("current-kart-name");
+    this.btnModeFfa = document.getElementById("btn-mode-ffa") as HTMLButtonElement;
+    this.btnModeTeam = document.getElementById("btn-mode-team") as HTMLButtonElement;
+    this.teamModeIndicator = document.getElementById("team-mode-indicator");
+    this.slotsSectionTitle = document.getElementById("slots-section-title");
 
     this.btnCopyCode = document.getElementById("btn-copy-code") as HTMLButtonElement;
     this.btnLeaveRoom = document.getElementById("btn-leave-room") as HTMLButtonElement;
@@ -98,6 +115,13 @@ export class LobbyUI {
 
   public renderKartGallery(): void {
     if (!this.kartGallery) return;
+
+    // Check if gallery state actually changed before rebuilding DOM
+    const galleryHash = `${this.selectedKartIndex}_` + (this.latestPlayersMap ? Array.from(this.latestPlayersMap.values()).map((p: any) => `${p.id}_${p.kartModelIndex}`).join("|") : "");
+    if (galleryHash === this.lastGalleryHash && this.kartGallery.children.length > 0) {
+      return;
+    }
+    this.lastGalleryHash = galleryHash;
 
     let html = "";
     KART_CATALOG.forEach((kart, index) => {
@@ -211,11 +235,35 @@ export class LobbyUI {
       this.currentKartName.textContent = def.name.toUpperCase();
     }
 
+    this.lastGalleryHash = ""; // Force re-render
     this.renderKartGallery();
     this.onSelectKartCallback?.(safeIdx);
   }
 
+  private toggleFullscreen(): void {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  }
+
   private setupListeners(): void {
+    this.homeFullscreenBtn?.addEventListener("click", () => this.toggleFullscreen());
+    this.hudFullscreenBtn?.addEventListener("click", () => this.toggleFullscreen());
+
+    this.btnModeFfa?.addEventListener("click", () => {
+      if (this.isHost) {
+        this.onSetGameModeCallback?.("ffa");
+      }
+    });
+
+    this.btnModeTeam?.addEventListener("click", () => {
+      if (this.isHost) {
+        this.onSetGameModeCallback?.("team");
+      }
+    });
+
     this.btnCreateRoom?.addEventListener("click", () => {
       const name = this.getPlayerName();
       this.clearError();
@@ -338,8 +386,8 @@ export class LobbyUI {
     }
   }
 
-  // Only the winner sees VICTORY; everyone else sees DEFEAT
-  public showMatchResult(winnerName: string, isLocalWinner: boolean): void {
+  // Team-aware match results
+  public showMatchResult(winnerName: string, isLocalWinner: boolean, winningTeam?: string): void {
     if (this.gameoverCard) {
       this.gameoverCard.className = `modal-card ${isLocalWinner ? "victory" : "defeat"}`;
     }
@@ -353,7 +401,12 @@ export class LobbyUI {
     }
 
     if (this.winnerNameBanner) {
-      this.winnerNameBanner.textContent = isLocalWinner ? "YOU WON THE MATCH!" : `${winnerName} WON`;
+      if (winningTeam && (winningTeam === "blue" || winningTeam === "red")) {
+        const teamLabel = winningTeam === "blue" ? "TEAM BLUE" : "TEAM RED";
+        this.winnerNameBanner.textContent = isLocalWinner ? `YOUR ${teamLabel} WON!` : `${teamLabel} WON`;
+      } else {
+        this.winnerNameBanner.textContent = isLocalWinner ? "YOU WON THE MATCH!" : `${winnerName} WON`;
+      }
     }
 
     if (this.gameoverSubtitle) {
@@ -371,6 +424,8 @@ export class LobbyUI {
     const playersMap = state.players;
     const playerCount = playersMap.size || 0;
     const localPlayer = playersMap.get(localSessionId);
+    const gameMode: "ffa" | "team" = state.gameMode || "ffa";
+    this.currentGameMode = gameMode;
 
     this.isHost = localPlayer?.isHost || false;
     this.isReadyState = localPlayer?.isReady || false;
@@ -378,11 +433,37 @@ export class LobbyUI {
     this.latestPlayersMap = playersMap;
     this.localSessionId = localSessionId;
 
+    // Update Mode Selector UI
+    if (this.btnModeFfa && this.btnModeTeam) {
+      if (gameMode === "team") {
+        this.btnModeFfa.className = "mode-toggle-btn";
+        this.btnModeTeam.className = "mode-toggle-btn team-active";
+      } else {
+        this.btnModeFfa.className = "mode-toggle-btn active";
+        this.btnModeTeam.className = "mode-toggle-btn";
+      }
+      this.btnModeFfa.disabled = !this.isHost;
+      this.btnModeTeam.disabled = !this.isHost;
+    }
+
+    if (this.teamModeIndicator) {
+      this.teamModeIndicator.style.display = gameMode === "team" ? "flex" : "none";
+    }
+
     // Sync selected kart index from server state
     if (localPlayer && localPlayer.kartModelIndex !== undefined) {
       if (localPlayer.kartModelIndex !== this.selectedKartIndex) {
         this.selectedKartIndex = localPlayer.kartModelIndex;
+        const def = getKartDef(this.selectedKartIndex);
+        if (this.currentKartName) {
+          this.currentKartName.textContent = def.name.toUpperCase();
+        }
       }
+    }
+
+    // PERFORMANCE OPTIMIZATION: If lobby view is hidden, do NOT render slots or gallery
+    if (this.lobbyView && this.lobbyView.style.display === "none") {
+      return;
     }
 
     // Re-render gallery to reflect taken/locked karts
@@ -392,6 +473,13 @@ export class LobbyUI {
     if (this.playerCountChip) {
       this.playerCountChip.textContent = `${playerCount} / 10 PLAYERS`;
     }
+
+    // Build hash of player slots to avoid unnecessary DOM rebuilding
+    const lobbyHash = Array.from(playersMap.values()).map((p: any) => `${p.id}_${p.slotIndex}_${p.kartModelIndex}_${p.isReady}_${p.isHost}_${p.team}`).join("|") + `_${gameMode}_${this.selectedKartIndex}_${this.isHost}`;
+    if (lobbyHash === this.lastLobbyHash) {
+      return;
+    }
+    this.lastLobbyHash = lobbyHash;
 
     // Build 10 slots map
     const slotMap = new Map<number, any>();
@@ -404,8 +492,16 @@ export class LobbyUI {
 
     for (let slot = 0; slot < 10; slot++) {
       const p = slotMap.get(slot);
-      const colorDef = getPlayerColor(slot);
+      const isTeamBlue = slot < 5;
+      const teamTag = gameMode === "team" ? (isTeamBlue ? "TEAM BLUE" : "TEAM RED") : "";
+      
+      // In team mode: blue team uses cyan (#00f0ff), red team uses red (#ff2a2a)
+      const colorDef = gameMode === "team"
+        ? (isTeamBlue ? { hex: "#00f0ff", name: "Blue" } : { hex: "#ff2a2a", name: "Red" })
+        : getPlayerColor(slot);
+
       const slotNumStr = (slot + 1).toString().padStart(2, "0");
+      const teamCardClass = gameMode === "team" ? (isTeamBlue ? "team-blue-slot" : "team-red-slot") : "";
 
       if (p) {
         const isMe = p.id === localSessionId;
@@ -415,9 +511,9 @@ export class LobbyUI {
           : `<div class="slot-status-pill waiting">WAITING</div>`;
 
         slotsHtml += `
-          <div class="slot-card occupied" style="--slot-color: ${colorDef.hex}">
+          <div class="slot-card occupied ${teamCardClass}" style="--slot-color: ${colorDef.hex}">
             <div class="slot-header">
-              <span class="slot-number">SLOT ${slotNumStr}</span>
+              <span class="slot-number">${gameMode === "team" ? teamTag : `SLOT ${slotNumStr}`}</span>
               <div class="slot-color-swatch" title="${colorDef.name} Trail"></div>
             </div>
             <div class="slot-body">
@@ -434,9 +530,9 @@ export class LobbyUI {
         `;
       } else {
         slotsHtml += `
-          <div class="slot-card empty" style="--slot-color: ${colorDef.hex}">
+          <div class="slot-card empty ${teamCardClass}" style="--slot-color: ${colorDef.hex}">
             <div class="slot-header">
-              <span class="slot-number">SLOT ${slotNumStr}</span>
+              <span class="slot-number">${gameMode === "team" ? teamTag : `SLOT ${slotNumStr}`}</span>
               <div class="slot-color-swatch" style="opacity: 0.25;"></div>
             </div>
             <div class="slot-body">
@@ -486,9 +582,20 @@ export class LobbyUI {
     const scoreboardList = document.getElementById("scoreboard-list");
     if (!scoreboardList || !playersMap) return;
 
+    // PERFORMANCE OPTIMIZATION: Memoize scoreboard to avoid 30Hz DOM rebuilding
+    const scoreHash = Array.from(playersMap.values()).map((p: any) => `${p.id}_${p.health}_${p.eliminated}_${p.score}_${p.team}`).join("|");
+    if (scoreHash === this.lastScoreboardHash) {
+      return;
+    }
+    this.lastScoreboardHash = scoreHash;
+
     let html = "";
     playersMap.forEach?.((p: any) => {
-      const colorDef = getPlayerColor(p.colorIndex);
+      const isTeamMode = p.team === "blue" || p.team === "red";
+      const colorDef = isTeamMode
+        ? (p.team === "blue" ? { hex: "#00f0ff", name: "Blue" } : { hex: "#ff2a2a", name: "Red" })
+        : getPlayerColor(p.colorIndex);
+
       const isMe = p.id === localSessionId;
       const isDead = p.eliminated || p.health <= 0;
 
@@ -498,7 +605,7 @@ export class LobbyUI {
             <span class="scoreboard-dot" style="background-color: ${colorDef.hex}"></span>
             <span>${p.name} ${isMe ? "(You)" : ""}</span>
           </div>
-          <div class="scoreboard-score">${isDead ? "ELIMINATED" : `${p.health} HP`}</div>
+          <div class="scoreboard-score" style="color: ${colorDef.hex}">${isDead ? "ELIMINATED" : `${p.health} HP`}</div>
         </div>
       `;
     });

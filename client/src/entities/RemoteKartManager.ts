@@ -35,14 +35,18 @@ export class RemoteKartManager {
           player.colorIndex ?? 0,
           chosenModelIndex,
           player.isHost || false,
-          this.shadowGenerator || undefined
+          this.shadowGenerator || undefined,
+          player.team
         );
         this.remoteKarts.set(sessionId, remoteKart);
-        console.log(`🏎️ Spawned remote opponent: ${player.name} (${sessionId}) - Model #${chosenModelIndex + 1}`);
+        console.log(`🏎️ Spawned remote opponent: ${player.name} (${sessionId}) - Model #${chosenModelIndex + 1} - Team: ${player.team || "FFA"}`);
       } else {
         // If player swapped their locked-in vehicle in lobby, update their 3D model
         if (remoteKart.modelIndex !== chosenModelIndex) {
           remoteKart.loadKartModel(chosenModelIndex);
+        }
+        if (remoteKart.colorIndex !== player.colorIndex || remoteKart.team !== player.team) {
+          remoteKart.setPlayerColor(player.colorIndex ?? 0, player.team);
         }
       }
 

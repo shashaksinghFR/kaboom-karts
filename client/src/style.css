@@ -557,6 +557,69 @@ html, body {
   margin-top: 3px;
 }
 
+.lobby-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.lobby-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mode-selector-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(6, 9, 19, 0.75);
+  border: 1px solid var(--border-subtle);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.mode-toggle-group {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.mode-toggle-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-toggle-btn:hover {
+  color: #fff;
+}
+
+.mode-toggle-btn.active {
+  background: var(--accent-cyan);
+  color: #040814;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.mode-toggle-btn.team-active {
+  background: linear-gradient(90deg, #00f0ff, #ff2a2a);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 12px rgba(255, 42, 42, 0.4);
+}
+
 .room-code-badge {
   display: flex;
   align-items: center;
@@ -853,12 +916,49 @@ html, body {
   gap: 8px;
 }
 
+.slots-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .slots-section-title {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--text-muted);
+}
+
+.team-mode-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.team-blue-tag {
+  color: #00f0ff;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.team-vs-tag {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+}
+
+.team-red-tag {
+  color: #ff2a2a;
+  background: rgba(255, 42, 42, 0.12);
+  border: 1px solid rgba(255, 42, 42, 0.4);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .slots-grid {
@@ -879,6 +979,14 @@ html, body {
   gap: 8px;
   min-height: 96px;
   transition: all 0.2s ease;
+}
+
+.slot-card.team-blue-slot {
+  box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.06);
+}
+
+.slot-card.team-red-slot {
+  box-shadow: inset 0 0 15px rgba(255, 42, 42, 0.06);
 }
 
 .slot-card.occupied {
@@ -1207,20 +1315,17 @@ html, body {
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* Speedometer */
-.hud-speedometer {
-  position: absolute;
-  bottom: env(safe-area-inset-bottom, 16px);
-  right: env(safe-area-inset-right, 16px);
+/* Elevated Top Speedometer */
+.hud-speedometer-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   background: var(--bg-surface-glass);
   backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 10px 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  border: 1px solid var(--border-neon-cyan);
+  border-radius: 12px;
+  padding: 4px 14px;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
   pointer-events: none;
 }
 
@@ -1232,26 +1337,27 @@ html, body {
 
 .speed-value {
   font-family: var(--font-mono);
-  font-size: 2.2rem;
+  font-size: 1.55rem;
   font-weight: 900;
   color: #fff;
+  line-height: 1;
 }
 
 .speed-unit {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  font-weight: 800;
   color: var(--accent-cyan);
 }
 
 .speed-indicators {
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
 
 .indicator-badge {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 800;
   padding: 2px 6px;
   border-radius: 4px;

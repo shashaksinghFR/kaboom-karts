@@ -115,6 +115,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     prototypeScene.kartVisual.loadKartModel(kartModelIndex);
   };
 
+  lobbyUI.onSetGameModeCallback = (gameMode: "ffa" | "team") => {
+    networkClient.setGameMode(gameMode);
+  };
+
   lobbyUI.onLeaveRoomCallback = () => {
     networkClient.leaveRoom();
     soundManager.stopBackgroundMusic();
@@ -163,9 +167,13 @@ window.addEventListener("DOMContentLoaded", async () => {
         hasSetInitialSpawn = false;
       } else if (newPhase === "gameover") {
         soundManager.stopBackgroundMusic();
-        // Determine if local player won or was defeated
-        const isLocalWinner = state.winnerSessionId === networkClient.localSessionId;
-        lobbyUI.showMatchResult(state.winnerName || "Opponent", isLocalWinner);
+        const myPlayer = state.players?.get(networkClient.localSessionId);
+        const isTeamMode = state.gameMode === "team";
+        const isLocalWinner = isTeamMode
+          ? (state.winningTeam && myPlayer?.team === state.winningTeam)
+          : (state.winnerSessionId === networkClient.localSessionId);
+
+        lobbyUI.showMatchResult(state.winnerName || "Opponent", isLocalWinner, state.winningTeam);
       }
     }
 
@@ -184,7 +192,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       if (myPlayer) {
         if (!hasSetInitialSpawn && (newPhase === "countdown" || newPhase === "playing")) {
           prototypeScene.setSpawnTransform(myPlayer.x, myPlayer.y, myPlayer.z, myPlayer.yaw);
-          prototypeScene.kartVisual.setPlayerColor(myPlayer.colorIndex);
+          prototypeScene.kartVisual.setPlayerColor(myPlayer.colorIndex, myPlayer.team);
           const chosenModel = myPlayer.kartModelIndex ?? myPlayer.slotIndex ?? 0;
           prototypeScene.kartVisual.loadKartModel(chosenModel);
           hasSetInitialSpawn = true;

@@ -58,7 +58,7 @@ export const KART_CATALOG: KartModelDef[] = [
     speedRating: 94,
     handlingRating: 86,
     armorRating: 85,
-    rotationYOffset: 2.8485, // Calibrated counter-yaw: makes vehicle face +Z straight forward
+    rotationYOffset: -2.8485, // Calibrated counter-yaw: makes vehicle face +Z straight forward
   },
   {
     id: "kart5",

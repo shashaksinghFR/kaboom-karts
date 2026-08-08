@@ -6,6 +6,7 @@ export interface PlayerNetData {
   slotIndex: number;
   colorIndex: number;
   kartModelIndex: number;
+  team?: "blue" | "red" | "none";
   isHost: boolean;
   isReady: boolean;
   x: number;
@@ -188,6 +189,12 @@ export class NetworkClient {
   public selectKart(kartModelIndex: number): void {
     if (this.room) {
       this.room.send("selectKart", { kartModelIndex });
+    }
+  }
+
+  public setGameMode(gameMode: "ffa" | "team"): void {
+    if (this.room && this.isHost) {
+      this.room.send("setGameMode", { gameMode });
     }
   }
 

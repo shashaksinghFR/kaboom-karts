@@ -34,6 +34,7 @@ export class RemoteKartVisual {
   public modelIndex: number = 0;
   public health: number = 100;
   public isHost: boolean = false;
+  public team: string = "";
 
   // Tail Light Trails
   private leftTailLightAnchor!: TransformNode;
@@ -59,7 +60,8 @@ export class RemoteKartVisual {
     colorIndex: number,
     modelIndex: number = 0,
     isHost: boolean = false,
-    shadowGenerator?: ShadowGenerator
+    shadowGenerator?: ShadowGenerator,
+    team?: string
   ) {
     this.scene = scene;
     this.playerName = playerName;
@@ -67,6 +69,7 @@ export class RemoteKartVisual {
     this.modelIndex = modelIndex;
     this.isHost = isHost;
     this.shadowGenerator = shadowGenerator || null;
+    this.team = team || "";
 
     // 1. Root node
     this.rootNode = new TransformNode(`RemoteKart_${playerName}_${modelIndex}`, this.scene);
@@ -104,13 +107,31 @@ export class RemoteKartVisual {
     this.rightTailLightAnchor.parent = this.tiltNode;
     this.rightTailLightAnchor.position = new Vector3(0.45, 0.25, -1.4);
 
-    const playerColor = getPlayerColor(this.colorIndex);
-    this.trailMaterial = new StandardMaterial(`RemoteTrailMat_${this.colorIndex}`, this.scene);
-    this.trailMaterial.diffuseColor = playerColor.color3;
-    this.trailMaterial.emissiveColor = playerColor.color3;
+    this.trailMaterial = new StandardMaterial(`RemoteTrailMat_${this.playerName}`, this.scene);
     this.trailMaterial.disableLighting = true;
     this.trailMaterial.alpha = 0.42;
     this.trailMaterial.backFaceCulling = false;
+    this.setPlayerColor(this.colorIndex, this.team);
+  }
+
+  public setPlayerColor(colorIndex: number, team?: string): void {
+    this.colorIndex = colorIndex;
+    if (team !== undefined) this.team = team;
+
+    let color3: Color3;
+    if (this.team === "blue") {
+      color3 = Color3.FromHexString("#00f0ff");
+    } else if (this.team === "red") {
+      color3 = Color3.FromHexString("#ff2a2a");
+    } else {
+      const playerColor = getPlayerColor(colorIndex);
+      color3 = playerColor.color3;
+    }
+
+    if (this.trailMaterial) {
+      this.trailMaterial.diffuseColor = color3;
+      this.trailMaterial.emissiveColor = color3;
+    }
   }
 
   private ensureTrailsActive(): void {

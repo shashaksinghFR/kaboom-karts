@@ -40,6 +40,10 @@
             </div>
             
             <div class="nav-right-cluster">
+              <button id="home-fullscreen-btn" class="control-badge-btn" title="Toggle Fullscreen">
+                <span class="control-dot" style="background: var(--accent-magenta);"></span>
+                <span id="home-fullscreen-text">FULLSCREEN</span>
+              </button>
               <button id="audio-toggle-btn" class="control-badge-btn" title="Toggle Sound & Music">
                 <span class="audio-dot"></span>
                 <span id="audio-status-text">AUDIO: ON</span>
@@ -62,8 +66,8 @@
 
               <div class="feature-pills">
                 <div class="feature-pill">
-                  <span class="pill-tag">CAPACITY</span>
-                  <span>10 Players Max</span>
+                  <span class="pill-tag">MODES</span>
+                  <span>Free-For-All & 5v5 Team</span>
                 </div>
                 <div class="feature-pill">
                   <span class="pill-tag">VEHICLES</span>
@@ -143,16 +147,32 @@
                 <h1 class="lobby-title">BATTLE LOBBY</h1>
                 <div id="player-count-chip" class="count-chip">1 / 10 PLAYERS</div>
               </div>
-              <p class="lobby-subtitle">Choose and lock in your kart model, then ready up for the 3D match.</p>
+              <p class="lobby-subtitle">Choose and lock in your kart model, select game mode, then ready up.</p>
             </div>
 
-            <!-- Room Code Card -->
-            <div class="room-code-badge">
-              <span class="code-label">ROOM CODE</span>
-              <span id="display-room-code" class="code-value">------</span>
-              <button id="btn-copy-code" class="btn-copy" title="Copy room code">
-                <span>COPY</span>
-              </button>
+            <!-- Mode Selector & Room Code Card -->
+            <div class="lobby-header-right">
+              <!-- Game Mode Selector -->
+              <div class="mode-selector-badge">
+                <span class="code-label">GAME MODE</span>
+                <div class="mode-toggle-group">
+                  <button id="btn-mode-ffa" class="mode-toggle-btn active" title="10-Player Free For All">
+                    <span>FREE FOR ALL</span>
+                  </button>
+                  <button id="btn-mode-team" class="mode-toggle-btn" title="5v5 Team Battle (Blue vs Red)">
+                    <span>5v5 TEAM</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Room Code Card -->
+              <div class="room-code-badge">
+                <span class="code-label">ROOM CODE</span>
+                <span id="display-room-code" class="code-value">------</span>
+                <button id="btn-copy-code" class="btn-copy" title="Copy room code">
+                  <span>COPY</span>
+                </button>
+              </div>
             </div>
           </header>
 
@@ -175,7 +195,14 @@
 
           <!-- 10-Player Slots Grid (2x5) -->
           <div class="slots-section">
-            <div class="slots-section-title">RACER ROSTER</div>
+            <div class="slots-section-header">
+              <div id="slots-section-title" class="slots-section-title">RACER ROSTER</div>
+              <div id="team-mode-indicator" class="team-mode-indicator" style="display: none;">
+                <span class="team-blue-tag">TEAM BLUE (SLOTS 1-5)</span>
+                <span class="team-vs-tag">VS</span>
+                <span class="team-red-tag">TEAM RED (SLOTS 6-10)</span>
+              </div>
+            </div>
             <div id="slots-grid" class="slots-grid">
               <!-- Dynamically populated 10 slots -->
             </div>
@@ -210,6 +237,18 @@
             <span id="hud-room-code-tag" class="brand-version">ROOM</span>
           </div>
 
+          <!-- Elevated Top Speedometer (Clear of bottom touch controls) -->
+          <div class="hud-speedometer-top">
+            <div class="speed-number-wrap">
+              <span id="speed-display" class="speed-value">0</span>
+              <span class="speed-unit">KM/H</span>
+            </div>
+            <div class="speed-indicators">
+              <span id="drift-indicator" class="indicator-badge">DRIFT</span>
+              <span id="boost-indicator" class="indicator-badge">BOOST</span>
+            </div>
+          </div>
+
           <div class="top-stats">
             <!-- Weapon Cooldown Badge -->
             <div id="weapon-status-badge" class="weapon-badge ready">
@@ -218,6 +257,10 @@
                 <div id="weapon-cooldown-fill" class="weapon-cooldown-fill" style="width: 100%;"></div>
               </div>
             </div>
+
+            <button id="hud-fullscreen-toggle" class="hud-btn" title="Toggle Fullscreen">
+              <span id="hud-fullscreen-text">FULLSCREEN</span>
+            </button>
 
             <button id="hud-audio-toggle" class="hud-btn" title="Toggle Sound">
               <span id="hud-audio-text">SOUND: ON</span>
@@ -240,7 +283,7 @@
 
         <!-- Live Scoreboard / Roster (Top Left) -->
         <div id="hud-scoreboard" class="hud-scoreboard">
-          <div class="scoreboard-title">ARENA RACERS</div>
+          <div id="scoreboard-title" class="scoreboard-title">ARENA RACERS</div>
           <div id="scoreboard-list" class="scoreboard-list"></div>
         </div>
 
@@ -248,18 +291,6 @@
         <div id="countdown-overlay" class="countdown-overlay" style="display: none;">
           <div class="countdown-subtext">MATCH STARTING IN</div>
           <div id="countdown-number" class="countdown-number">5</div>
-        </div>
-
-        <!-- Speedometer & Driving Gauges -->
-        <div class="hud-speedometer">
-          <div class="speed-number-wrap">
-            <span id="speed-display" class="speed-value">0</span>
-            <span class="speed-unit">KM/H</span>
-          </div>
-          <div class="speed-indicators">
-            <span id="drift-indicator" class="indicator-badge">DRIFT</span>
-            <span id="boost-indicator" class="indicator-badge">BOOST</span>
-          </div>
         </div>
 
         <!-- MOBILE / TOUCH SCREEN CONTROLLER -->
