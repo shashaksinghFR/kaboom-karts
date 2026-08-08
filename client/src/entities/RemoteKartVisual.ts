@@ -30,6 +30,7 @@ export class RemoteKartVisual {
   private nameplateTexture!: DynamicTexture;
   public playerName: string = "Racer";
   public colorIndex: number = 0;
+  public slotIndex: number = 0;
   public health: number = 100;
   public isHost: boolean = false;
 
@@ -40,10 +41,6 @@ export class RemoteKartVisual {
   private rightTrailMesh: TrailMesh | null = null;
   private trailMaterial!: StandardMaterial;
   private trailsInitialized: boolean = false;
-
-  // Subtle Enemy Underglow Halo
-  private underglowMesh!: Mesh;
-  private underglowMat!: StandardMaterial;
 
   // Interpolation targets for smooth remote rendering
   public targetPosition: Vector3 = Vector3.Zero();
@@ -59,17 +56,19 @@ export class RemoteKartVisual {
     scene: Scene,
     playerName: string,
     colorIndex: number,
+    slotIndex: number = 0,
     isHost: boolean = false,
     shadowGenerator?: ShadowGenerator
   ) {
     this.scene = scene;
     this.playerName = playerName;
     this.colorIndex = colorIndex;
+    this.slotIndex = slotIndex;
     this.isHost = isHost;
     this.shadowGenerator = shadowGenerator || null;
 
     // 1. Root node
-    this.rootNode = new TransformNode(`RemoteKart_${playerName}`, this.scene);
+    this.rootNode = new TransformNode(`RemoteKart_${playerName}_${slotIndex}`, this.scene);
     this.rootNode.position = new Vector3(0, 0.5, 0);
     this.targetPosition.copyFrom(this.rootNode.position);
 
@@ -86,58 +85,14 @@ export class RemoteKartVisual {
     this.modelOffsetNode = new TransformNode("RemoteModelOffset", this.scene);
     this.modelOffsetNode.parent = this.visualMeshRoot;
 
-    // 5. Setup Subtle Underglow Aura
-    this.setupSubtleGlow();
-
-    // 6. Setup Tail Light Anchors & Trails
+    // 5. Setup Tail Light Anchors & Unique Color Trail
     this.setupTailLightTrails();
 
-    // 7. Setup Clean Proportionate Nameplate
+    // 6. Setup Clean Proportionate Nameplate
     this.setupNameplate();
 
-    // 8. Load Model with original textures + subtle glow enhancement
-    this.loadModel();
-  }
-
-  private setupSubtleGlow(): void {
-    const playerColor = getPlayerColor(this.colorIndex);
-
-    // Create subtle underglow disc on the ground directly beneath kart
-    this.underglowMesh = MeshBuilder.CreateDisc(
-      `RemoteUnderglow_${this.playerName}`,
-      { radius: 1.85, tessellation: 32 },
-      this.scene
-    );
-    this.underglowMesh.parent = this.tiltNode;
-    this.underglowMesh.rotation.x = Math.PI / 2; // Flat on floor
-    this.underglowMesh.position.y = -0.38; // Hovering right above ground
-
-    this.underglowMat = new StandardMaterial(`RemoteUnderglowMat_${this.playerName}`, this.scene);
-    this.underglowMat.diffuseColor = playerColor.color3;
-    this.underglowMat.emissiveColor = playerColor.color3;
-    this.underglowMat.disableLighting = true;
-    this.underglowMat.alpha = 0.35;
-    this.underglowMat.backFaceCulling = false;
-
-    // Radial gradient glow texture
-    const glowTex = new DynamicTexture(
-      `UnderglowTex_${this.playerName}`,
-      256,
-      this.scene,
-      false
-    );
-    glowTex.hasAlpha = true;
-    const ctx = glowTex.getContext() as CanvasRenderingContext2D;
-    const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 128);
-    grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-    grad.addColorStop(0.45, "rgba(255, 255, 255, 0.45)");
-    grad.addColorStop(1, "rgba(255, 255, 255, 0)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 256, 256);
-    glowTex.update();
-
-    this.underglowMat.opacityTexture = glowTex;
-    this.underglowMesh.material = this.underglowMat;
+    // 7. Load Model with 100% pristine original textures (or slot-specific model)
+    this.loadSlotModel();
   }
 
   private setupTailLightTrails(): void {
@@ -153,8 +108,8 @@ export class RemoteKartVisual {
     this.trailMaterial = new StandardMaterial(`RemoteTrailMat_${this.colorIndex}`, this.scene);
     this.trailMaterial.diffuseColor = playerColor.color3;
     this.trailMaterial.emissiveColor = playerColor.color3;
-    this.trailMaterial.disableLighting = true;
-    this.trailMaterial.alpha = 0.45;
+    this.trailMaterial.disableLighting = true; // Clean vibrant laser trail
+    this.trailMaterial.alpha = 0.42;
     this.trailMaterial.backFaceCulling = false;
   }
 
@@ -162,21 +117,21 @@ export class RemoteKartVisual {
     if (this.trailsInitialized) return;
 
     this.leftTrailMesh = new TrailMesh(
-      `RemoteLeftTrail_${this.playerName}`,
+      `RemoteLeftTrail_${this.playerName}_${this.slotIndex}`,
       this.leftTailLightAnchor,
       this.scene,
-      0.08,
-      25,
+      0.09,
+      35,
       true
     );
     this.leftTrailMesh.material = this.trailMaterial;
 
     this.rightTrailMesh = new TrailMesh(
-      `RemoteRightTrail_${this.playerName}`,
+      `RemoteRightTrail_${this.playerName}_${this.slotIndex}`,
       this.rightTailLightAnchor,
       this.scene,
-      0.08,
-      25,
+      0.09,
+      35,
       true
     );
     this.rightTrailMesh.material = this.trailMaterial;
@@ -192,7 +147,7 @@ export class RemoteKartVisual {
       this.scene
     );
     this.nameplateMesh.parent = this.rootNode;
-    this.nameplateMesh.position.y = 1.6;
+    this.nameplateMesh.position.y = 1.65;
     this.nameplateMesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
     // Matching 4:1 texture dimension (512 x 128)
@@ -237,50 +192,62 @@ export class RemoteKartVisual {
     this.nameplateTexture.update();
   }
 
-  private async loadModel(modelUrl: string = "/models/hoveringcar.glb"): Promise<void> {
+  // Load slot-specific model if available (e.g. /models/kart_0.glb ... kart_9.glb or fallback to hoveringcar.glb)
+  private async loadSlotModel(): Promise<void> {
+    const slotModelUrl = `/models/kart_${this.slotIndex}.glb`;
+    const defaultModelUrl = "/models/hoveringcar.glb";
+
     try {
-      const result = await SceneLoader.ImportMeshAsync("", "", modelUrl, this.scene);
-      this.meshes = result.meshes;
-
-      result.meshes.forEach((mesh) => {
-        if (!mesh.parent) {
-          mesh.parent = this.modelOffsetNode;
-        }
-
-        if (this.shadowGenerator) {
-          this.shadowGenerator.addShadowCaster(mesh, true);
-        }
-        mesh.receiveShadows = true;
-
-        if (mesh.material) {
-          this.enhanceModelMaterial(mesh.material);
-        }
-      });
-
-      this.normalizeModelScaleAndOffset();
-      this.isLoaded = true;
-    } catch (err) {
-      console.warn("⚠️ Failed to load remote GLB model, using procedural fallback:", err);
-      this.createProceduralFallback();
-      this.isLoaded = true;
+      // First try slot-specific model
+      await this.tryImportMesh(slotModelUrl);
+    } catch {
+      // Fallback to default hoveringcar.glb
+      try {
+        await this.tryImportMesh(defaultModelUrl);
+      } catch (err) {
+        console.warn("⚠️ Failed to load GLB model, using procedural fallback:", err);
+        this.createProceduralFallback();
+        this.isLoaded = true;
+      }
     }
   }
 
-  private enhanceModelMaterial(material: any): void {
-    const playerColor = getPlayerColor(this.colorIndex);
+  private async tryImportMesh(url: string): Promise<void> {
+    const result = await SceneLoader.ImportMeshAsync("", "", url, this.scene);
+    this.meshes = result.meshes;
 
+    result.meshes.forEach((mesh) => {
+      if (!mesh.parent) {
+        mesh.parent = this.modelOffsetNode;
+      }
+
+      if (this.shadowGenerator) {
+        this.shadowGenerator.addShadowCaster(mesh, true);
+      }
+      mesh.receiveShadows = true;
+
+      // Keep original car materials 100% clean & pristine (NO muddy color tinting)
+      if (mesh.material) {
+        this.enhanceModelMaterial(mesh.material);
+      }
+    });
+
+    this.normalizeModelScaleAndOffset();
+    this.isLoaded = true;
+  }
+
+  // Preserve 100% original model textures and metallic finishes
+  private enhanceModelMaterial(material: any): void {
     if (material instanceof PBRMaterial) {
-      material.directIntensity = 1.45;
-      material.environmentIntensity = 1.35;
-      material.specularIntensity = 1.1;
-      // Gentle subtle emissive tint based on player color
-      material.emissiveColor = playerColor.color3.scale(0.18);
+      material.directIntensity = 1.3;
+      material.environmentIntensity = 1.1;
+      material.specularIntensity = 1.0;
+      // Do NOT tint emissiveColor, keep original car look
       if (material.albedoTexture) {
         material.albedoTexture.hasAlpha = false;
       }
     } else if (material instanceof StandardMaterial) {
-      material.specularPower = 48;
-      material.emissiveColor = playerColor.color3.scale(0.2);
+      material.specularPower = 32;
     }
   }
 
@@ -364,8 +331,6 @@ export class RemoteKartVisual {
   public dispose(): void {
     if (this.leftTrailMesh) this.leftTrailMesh.dispose();
     if (this.rightTrailMesh) this.rightTrailMesh.dispose();
-    if (this.underglowMesh) this.underglowMesh.dispose();
-    if (this.underglowMat) this.underglowMat.dispose();
     this.nameplateMesh.dispose();
     this.nameplateTexture.dispose();
     this.meshes.forEach((m) => m.dispose());

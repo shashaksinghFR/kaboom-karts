@@ -31,11 +31,12 @@ export class RemoteKartManager {
           this.scene,
           player.name || "Opponent",
           player.colorIndex || 0,
+          player.slotIndex || 0,
           player.isHost || false,
           this.shadowGenerator || undefined
         );
         this.remoteKarts.set(sessionId, remoteKart);
-        console.log(`🏎️ Spawned remote opponent: ${player.name} (${sessionId})`);
+        console.log(`🏎️ Spawned remote opponent: ${player.name} (${sessionId}) - Slot ${player.slotIndex}`);
       }
 
       // Update target transforms and live speed

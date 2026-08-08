@@ -24,6 +24,7 @@ export class KartVisual implements IKartVisual {
   private isLoaded: boolean = false;
   private shadowGenerator: ShadowGenerator | null = null;
   public colorIndex: number = 0;
+  public slotIndex: number = 0;
 
   // Visual tilt / banking nodes
   private tiltNode: TransformNode;
@@ -99,7 +100,7 @@ export class KartVisual implements IKartVisual {
       "LeftTailTrail",
       this.leftTailLightAnchor,
       this.scene,
-      0.09, // Crisp laser trail
+      0.09,
       40,
       true
     );
@@ -129,6 +130,18 @@ export class KartVisual implements IKartVisual {
     }
   }
 
+  public async loadSlotModel(slotIndex: number): Promise<void> {
+    this.slotIndex = slotIndex;
+    const slotModelUrl = `/models/kart_${slotIndex}.glb`;
+    const defaultModelUrl = "/models/hoveringcar.glb";
+
+    try {
+      await this.loadModel(slotModelUrl);
+    } catch {
+      await this.loadModel(defaultModelUrl);
+    }
+  }
+
   public async loadModel(modelUrl: string = "/models/hoveringcar.glb"): Promise<void> {
     try {
       const result = await SceneLoader.ImportMeshAsync(
@@ -138,6 +151,8 @@ export class KartVisual implements IKartVisual {
         this.scene
       );
 
+      // Clean up previous meshes if reloading
+      this.meshes.forEach((m) => m.dispose());
       this.meshes = result.meshes;
 
       // Group all root imported meshes under modelOffsetNode
