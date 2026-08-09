@@ -58,15 +58,15 @@ export class PrototypeScene {
     this.scene.fogDensity = 0.0015;
     this.scene.fogColor = new Color3(0.28, 0.34, 0.50);
 
-    // 1. High-Luminance Stadium Sun & Flood Lighting for Maximum Vehicle Visibility
+    // 1. Balanced Stadium Lighting (Fixes the blinding white screen)
     const hemiLight = new HemisphericLight(
       "StadiumHemiLight",
       new Vector3(0, 1, 0),
       this.scene
     );
-    hemiLight.intensity = 2.3;
-    hemiLight.diffuse = new Color3(1.0, 1.0, 1.0); // Ultra bright white ambient
-    hemiLight.groundColor = new Color3(0.75, 0.82, 0.95); // High upward bounce illumination
+    hemiLight.intensity = 0.8;
+    hemiLight.diffuse = new Color3(0.9, 0.9, 0.95);
+    hemiLight.groundColor = new Color3(0.1, 0.15, 0.25);
 
     const stadiumSunLight = new DirectionalLight(
       "StadiumSunLight",
@@ -74,16 +74,15 @@ export class PrototypeScene {
       this.scene
     );
     stadiumSunLight.position = new Vector3(60, 140, 60);
-    stadiumSunLight.intensity = 2.8; // Bright radiant sunlight effect
+    stadiumSunLight.intensity = 1.4;
     stadiumSunLight.diffuse = new Color3(1.0, 0.98, 0.92);
 
-    // Dynamic Rim Fill Light to make all enemy cars pop from a distance
     const rimFillLight = new DirectionalLight(
       "StadiumRimFillLight",
       new Vector3(0.45, -0.6, 0.45).normalize(),
       this.scene
     );
-    rimFillLight.intensity = 1.3;
+    rimFillLight.intensity = 0.6;
     rimFillLight.diffuse = new Color3(0.85, 0.92, 1.0);
 
     // High-performance PCF Shadow Generator
@@ -221,11 +220,11 @@ export class PrototypeScene {
       this.scene
     );
 
-    const groundMat = new StandardMaterial("TronFloorMat", this.scene);
-    groundMat.diffuseColor = new Color3(0.72, 0.78, 0.88); // Crisp high-contrast metallic base
-    groundMat.specularColor = new Color3(1.0, 1.0, 1.0); // Glossy wet reflections
-    groundMat.specularPower = 28;
-    groundMat.emissiveColor = new Color3(0.18, 0.22, 0.30); // Self-illuminated circuit clarity
+    const groundMat = new StandardMaterial("StadiumGroundMat", this.scene);
+    groundMat.diffuseColor = new Color3(0.25, 0.3, 0.4); // Darker metallic base
+    groundMat.specularColor = new Color3(0.4, 0.4, 0.5); // Softer reflections
+    groundMat.specularPower = 32;
+    groundMat.emissiveColor = new Color3(0.05, 0.08, 0.12); // Subtle self-illumination
 
     // High-resolution procedural Tron circuit floor texture
     const groundTex = new DynamicTexture("TronFloorTex", 1024, this.scene, true);
