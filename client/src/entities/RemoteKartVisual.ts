@@ -18,7 +18,7 @@ import { getPlayerColor } from "../network/constants";
 import { getKartDef } from "../config/karts";
 
 export class RemoteKartVisual {
-  public rootNode: TransformNode;
+  public rootNode: Mesh;
   public visualMeshRoot: TransformNode;
   private modelOffsetNode: TransformNode;
   public meshes: AbstractMesh[] = [];
@@ -71,8 +71,12 @@ export class RemoteKartVisual {
     this.shadowGenerator = shadowGenerator || null;
     this.team = team || "";
 
-    // 1. Root node
-    this.rootNode = new TransformNode(`RemoteKart_${playerName}_${modelIndex}`, this.scene);
+    // 1. Root node acts as invisible physics capsule
+    this.rootNode = MeshBuilder.CreateCapsule(`RemoteKart_${playerName}_${modelIndex}`, { radius: 1.2, height: 2.8 }, this.scene);
+    this.rootNode.isVisible = false;
+    this.rootNode.checkCollisions = true;
+    this.rootNode.ellipsoid = new Vector3(1.2, 1.4, 1.4);
+    this.rootNode.ellipsoidOffset = new Vector3(0, 1.4, 0);
     this.rootNode.position = new Vector3(0, 0.45, 0);
     this.targetPosition.copyFrom(this.rootNode.position);
 

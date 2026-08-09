@@ -10,6 +10,7 @@ import {
   Color3,
   MeshBuilder,
   TrailMesh,
+  Mesh,
 } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { IKartVisual } from "./types";
@@ -17,7 +18,7 @@ import { getPlayerColor } from "../network/constants";
 import { getKartDef } from "../config/karts";
 
 export class KartVisual implements IKartVisual {
-  public rootNode: TransformNode;
+  public rootNode: Mesh;
   public visualMeshRoot: TransformNode;
   private modelOffsetNode: TransformNode;
   public meshes: AbstractMesh[] = [];
@@ -52,8 +53,12 @@ export class KartVisual implements IKartVisual {
     this.scene = scene;
     this.shadowGenerator = shadowGenerator || null;
 
-    // 1. Root node holds true world position & yaw rotation
-    this.rootNode = new TransformNode("KartRoot", this.scene);
+    // 1. Root node holds true world position & yaw rotation, now acts as collision volume
+    this.rootNode = MeshBuilder.CreateCapsule("KartRoot", { radius: 1.2, height: 2.8 }, this.scene);
+    this.rootNode.isVisible = false; // Invisible physics body
+    this.rootNode.checkCollisions = true;
+    this.rootNode.ellipsoid = new Vector3(1.2, 1.4, 1.4); // Collider bounds
+    this.rootNode.ellipsoidOffset = new Vector3(0, 1.4, 0); // Offset upwards so pivot is at bottom
     this.rootNode.position = new Vector3(0, this.baseHoverHeight, 0);
 
     // 2. Tilt node for visual banking (roll), acceleration pitch, and hover bobbing

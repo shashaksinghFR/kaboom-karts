@@ -44,6 +44,7 @@ export class KartController {
   // Velocity state
   public forwardSpeed: number = 0;
   public lateralVelocity: number = 0;
+  public verticalVelocity: number = 0; // Added for gravity
   public steerSmoothed: number = 0;
   public currentRoll: number = 0;
   public currentPitch: number = 0;
@@ -55,12 +56,9 @@ export class KartController {
   public boostRemaining: number = 2.0;
   public readonly boostRechargeTime: number = 10.0;
 
-  private arenaRadius: number;
-
   constructor(visual: KartVisual, tuning: KartTuning = DEFAULT_KART_TUNING) {
     this.visual = visual;
     this.tuning = tuning;
-    this.arenaRadius = (SCENE_CONFIG.DEFAULT_GROUND_SIZE * 0.95) / 2 - 2.5;
   }
 
   public getBoostRatio(): number {
@@ -151,7 +149,7 @@ export class KartController {
       : Math.pow(this.tuning.lateralFriction, dt * 60);
     this.lateralVelocity *= lateralDamping;
 
-    // 4. World Position Movement (XZ)
+    // 4. World Position Movement & 3D Collisions
     const sinYaw = Math.sin(this.yaw);
     const cosYaw = Math.cos(this.yaw);
 
@@ -161,22 +159,34 @@ export class KartController {
     const lateralMovementX = cosYaw * this.lateralVelocity * dt;
     const lateralMovementZ = -sinYaw * this.lateralVelocity * dt;
 
-    this.position.x += forwardMovementX + lateralMovementX;
-    this.position.z += forwardMovementZ + lateralMovementZ;
-    this.position.y = this.visual.baseHoverHeight; // Always smooth ground level
+    // Apply gravity
+    this.verticalVelocity -= 25.0 * dt; // Strong gravity to stick to slopes
+    
+    // Max fall speed terminal velocity
+    if (this.verticalVelocity < -40) this.verticalVelocity = -40;
 
-    // 5. Arena Boundary Elastic Containment
-    const distFromOrigin = Math.sqrt(this.position.x * this.position.x + this.position.z * this.position.z);
-    if (distFromOrigin > this.arenaRadius) {
-      const nx = -this.position.x / distFromOrigin;
-      const nz = -this.position.z / distFromOrigin;
+    const verticalMovementY = this.verticalVelocity * dt;
 
-      this.position.x = -nx * this.arenaRadius;
-      this.position.z = -nz * this.arenaRadius;
+    const movementVector = new Vector3(
+      forwardMovementX + lateralMovementX,
+      verticalMovementY,
+      forwardMovementZ + lateralMovementZ
+    );
 
-      this.forwardSpeed *= -0.35;
-      this.lateralVelocity *= -0.35;
+    const oldY = this.visual.rootNode.position.y;
+    
+    // Core BabylonJS collision integration
+    this.visual.rootNode.moveWithCollisions(movementVector);
+    
+    const newY = this.visual.rootNode.position.y;
+
+    // Detect if we hit the ground (if our actual Y is higher than our expected free-fall Y)
+    if (newY > oldY + verticalMovementY + 0.001) {
+      this.verticalVelocity = 0; // Grounded
     }
+
+    // Sync logic position to the physics-resolved position
+    this.position.copyFrom(this.visual.rootNode.position);
 
     // 6. Visual Tilts (Banking Roll & Acceleration Pitch)
     const targetRoll = -this.steerSmoothed * Math.min(Math.abs(this.forwardSpeed) / this.tuning.maxForwardSpeed, 1.0) * this.tuning.maxBankingRoll;
@@ -205,6 +215,7 @@ export class KartController {
     this.position.set(0, this.visual.baseHoverHeight, 0);
     this.forwardSpeed = 0;
     this.lateralVelocity = 0;
+    this.verticalVelocity = 0;
     this.steerSmoothed = 0;
     this.yaw = 0;
     this.currentRoll = 0;
