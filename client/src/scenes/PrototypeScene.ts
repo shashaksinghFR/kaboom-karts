@@ -195,11 +195,23 @@ export class PrototypeScene {
 
         // Scale the root node of the loaded arena by 500x
         if (result.meshes.length > 0) {
-           // GLB loader usually puts everything under a root node `__root__` which is result.meshes[0]
-           result.meshes[0].scaling.scaleInPlace(500);
+           const rootNode = result.meshes[0];
+           rootNode.scaling.scaleInPlace(500);
            
            // Ensure transformations are applied to children for correct physics collisions
            result.meshes.forEach(m => m.computeWorldMatrix(true));
+           
+           // Auto-align the arena so its actual floor matches our invisible CollisionFloor (Y = 0)
+           const ray = new BABYLON.Ray(new Vector3(0, 80000.0, 0), new Vector3(0, -1, 0), 160000.0);
+           const hit = this.scene.pickWithRay(ray, (mesh) => mesh.checkCollisions && mesh !== this.scene.getMeshByName("CollisionFloor"));
+           if (hit && hit.hit && hit.pickedPoint) {
+              const floorOffset = hit.pickedPoint.y;
+              rootNode.position.y -= floorOffset;
+              console.log(`🏟️ Arena floor detected at ${floorOffset}, shifting model down to Y=0`);
+              
+              // Recompute matrices after shift
+              result.meshes.forEach(m => m.computeWorldMatrix(true));
+           }
         }
 
         this.arenaLoaded = true;
@@ -218,7 +230,7 @@ export class PrototypeScene {
     if (!this.arenaLoaded) return 0.0;
     
     // Drop a ray from way up high straight down to find the solid floor
-    const ray = new BABYLON.Ray(new Vector3(x, 10000.0, z), new Vector3(0, -1, 0), 20000.0);
+    const ray = new BABYLON.Ray(new Vector3(x, 80000.0, z), new Vector3(0, -1, 0), 160000.0);
     const hit = this.scene.pickWithRay(ray, (mesh) => mesh.checkCollisions);
     if (hit && hit.hit && hit.pickedPoint) {
       return hit.pickedPoint.y;
