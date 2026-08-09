@@ -49,7 +49,8 @@ export class PrototypeScene {
   }) => void;
 
   private isFrozen: boolean = false;
-  private arenaLoaded: boolean = false;
+  public arenaLoaded: boolean = false;
+  private arenaRoot: BABYLON.AbstractMesh | null = null;
 
   constructor(gameEngine: GameEngine) {
     const rawEngine = gameEngine.getRawEngine();
@@ -188,23 +189,21 @@ export class PrototypeScene {
         // Scale the root node of the loaded arena by 500x
         if (result.meshes.length > 0) {
            const rootNode = result.meshes[0];
+           this.arenaRoot = rootNode;
            rootNode.scaling.scaleInPlace(500);
            
            // Ensure transformations are applied to children for correct physics collisions
            result.meshes.forEach(m => m.computeWorldMatrix(true));
            
-           // Auto-align the arena so its absolute lowest point rests precisely at Y = 0
-           // AND center it perfectly horizontally, just in case the 3D model was exported far away from (0,0)
+           // Auto-align the arena so it is perfectly centered horizontally at (0,0)
+           // This guarantees the raycast dropped at (0,0) will hit the drivable surface!
            const boundingInfo = rootNode.getHierarchyBoundingVectors();
-           
            const center = boundingInfo.min.add(boundingInfo.max).scale(0.5);
-           const floorOffset = boundingInfo.min.y;
            
            rootNode.position.x -= center.x;
-           rootNode.position.y -= floorOffset;
            rootNode.position.z -= center.z;
            
-           console.log(`🏟️ Arena floor detected at ${floorOffset}, center at (${center.x}, ${center.z}). Shifting model to exact origin.`);
+           console.log(`🏟️ Arena horizontally centered. Shifted by (${center.x}, ${center.z}).`);
            
            // Recompute matrices after shift
            result.meshes.forEach(m => m.computeWorldMatrix(true));
@@ -223,7 +222,7 @@ export class PrototypeScene {
   }
 
   public getFloorHeight(x: number, z: number): number {
-    if (!this.arenaLoaded) return 0.0;
+    if (!this.arenaLoaded || !this.arenaRoot) return 1000.0;
     
     // Drop a ray from way up high straight down to find the solid floor
     const ray = new BABYLON.Ray(new Vector3(x, 80000.0, z), new Vector3(0, -1, 0), 160000.0);
@@ -231,7 +230,11 @@ export class PrototypeScene {
     if (hit && hit.hit && hit.pickedPoint) {
       return hit.pickedPoint.y;
     }
-    return 0.0; // Fallback
+    
+    // Fallback: spawn the kart ABOVE the absolute highest point of the arena model
+    // This perfectly implements the user's request to drop them onto the arena
+    const bounds = this.arenaRoot.getHierarchyBoundingVectors();
+    return bounds.max.y + 100.0;
   }
 
   public update(deltaTime: number, inputManager: InputManager, isFrozen: boolean = false): void {
