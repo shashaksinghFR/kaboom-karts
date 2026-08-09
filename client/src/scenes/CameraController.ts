@@ -75,32 +75,38 @@ export class CameraController {
     this.scene.onPointerObservable.add((pi) => {
       if (this.currentMode !== CameraMode.CHASE) return;
       
-      const evt = pi.event as PointerEvent;
+      const evt = pi.event as any;
+      // Safely extract coordinates for both Mouse and Touch (prevents NaN camera crashes!)
+      const clientX = evt.clientX !== undefined ? evt.clientX : (evt.touches && evt.touches.length > 0 ? evt.touches[0].clientX : this.scene.pointerX);
+      const clientY = evt.clientY !== undefined ? evt.clientY : (evt.touches && evt.touches.length > 0 ? evt.touches[0].clientY : this.scene.pointerY);
+      const pointerId = evt.pointerId !== undefined ? evt.pointerId : (evt.changedTouches && evt.changedTouches.length > 0 ? evt.changedTouches[0].identifier : 0);
       
       if (pi.type === 1) { // POINTERDOWN
         if (!this.isFreeLooking) {
           this.isFreeLooking = true;
           this.freeLookTimer = 0;
-          this.dragPointerId = evt.pointerId;
-          this.lastPointerX = evt.clientX;
-          this.lastPointerY = evt.clientY;
+          this.dragPointerId = pointerId;
+          this.lastPointerX = clientX;
+          this.lastPointerY = clientY;
         }
       } else if (pi.type === 4) { // POINTERMOVE
-        if (this.isFreeLooking && this.dragPointerId === evt.pointerId) {
-          const dx = evt.clientX - this.lastPointerX;
-          const dy = evt.clientY - this.lastPointerY;
-          this.lastPointerX = evt.clientX;
-          this.lastPointerY = evt.clientY;
+        if (this.isFreeLooking && this.dragPointerId === pointerId) {
+          const dx = clientX - this.lastPointerX;
+          const dy = clientY - this.lastPointerY;
+          this.lastPointerX = clientX;
+          this.lastPointerY = clientY;
           
-          // Apply rotation
-          this.chaseCamera.alpha -= dx * 0.006;
-          this.chaseCamera.beta -= dy * 0.006;
-          
-          // Clamp beta manually just in case
-          this.chaseCamera.beta = Math.max(this.chaseCamera.lowerBetaLimit || 0.05, Math.min(this.chaseCamera.upperBetaLimit || Math.PI / 2.1, this.chaseCamera.beta));
+          // Apply rotation safely, double check for NaN
+          if (!isNaN(dx) && !isNaN(dy)) {
+            this.chaseCamera.alpha -= dx * 0.006;
+            this.chaseCamera.beta -= dy * 0.006;
+            
+            // Clamp beta manually just in case
+            this.chaseCamera.beta = Math.max(this.chaseCamera.lowerBetaLimit || 0.05, Math.min(this.chaseCamera.upperBetaLimit || Math.PI / 2.1, this.chaseCamera.beta));
+          }
         }
       } else if (pi.type === 2 || pi.type === 8) { // POINTERUP or POINTEROUT
-        if (this.isFreeLooking && this.dragPointerId === evt.pointerId) {
+        if (this.isFreeLooking && this.dragPointerId === pointerId) {
           this.isFreeLooking = false;
           this.dragPointerId = -1;
         }

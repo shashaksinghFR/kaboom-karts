@@ -127,7 +127,7 @@ export class PrototypeScene {
     // A. Skybox Sphere with Crimson Cyber Nebula & Spire Skyline
     const skyDome = MeshBuilder.CreateSphere(
       "StadiumSkyDome",
-      { diameter: 8000, segments: 32 },
+      { diameter: 6000, segments: 32 },
       this.scene
     );
     skyDome.infiniteDistance = true;
