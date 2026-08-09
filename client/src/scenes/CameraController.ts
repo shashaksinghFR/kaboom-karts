@@ -50,6 +50,8 @@ export class CameraController {
     this.orbitCamera.upperRadiusLimit = 16.0;
     this.orbitCamera.lowerBetaLimit = 0.2;
     this.orbitCamera.upperBetaLimit = Math.PI / 2.05;
+    this.orbitCamera.minZ = 1.0;
+    this.orbitCamera.maxZ = 80000;
 
     // 2. Third-Person Chase Camera (Free-Look enabled)
     this.chaseCamera = new ArcRotateCamera(
@@ -61,8 +63,8 @@ export class CameraController {
       this.scene
     );
     this.chaseCamera.fov = 0.85; // Slightly narrower FOV for a cinematic look from distance
-    this.chaseCamera.minZ = 0.1;
-    this.chaseCamera.maxZ = 3000000; // Allow huge scaling
+    this.chaseCamera.minZ = 2.0; // Increased minZ significantly to fix extreme Z-fighting / depth buffer precision loss
+    this.chaseCamera.maxZ = 80000; // Cap maxZ to keep ratio within WebGL precision limits
     this.chaseCamera.lowerRadiusLimit = this.distanceBehind; // Lock distance exactly
     this.chaseCamera.upperRadiusLimit = this.distanceBehind; 
     this.chaseCamera.lowerBetaLimit = 0.05;
