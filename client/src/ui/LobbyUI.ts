@@ -42,7 +42,9 @@ export class LobbyUI {
   private gameoverTitle: HTMLElement | null;
   private winnerNameBanner: HTMLElement | null;
   private gameoverSubtitle: HTMLElement | null;
-  private btnReturnLobby: HTMLButtonElement | null;
+  private btnReturnLobby: HTMLButtonElement | null = null;
+  private loadingOverlay: HTMLElement | null = null;
+  private loaderFill: HTMLElement | null = null;
 
   // Selected Kart State & Performance Caching
   public selectedKartIndex: number = 0;
@@ -106,6 +108,8 @@ export class LobbyUI {
     this.winnerNameBanner = document.getElementById("winner-name-banner");
     this.gameoverSubtitle = document.getElementById("gameover-subtitle");
     this.btnReturnLobby = document.getElementById("btn-return-lobby") as HTMLButtonElement;
+    this.loadingOverlay = document.getElementById("loading-overlay");
+    this.loaderFill = document.getElementById("loader-fill");
 
     this.renderKartGallery();
     this.setupListeners();
@@ -379,6 +383,26 @@ export class LobbyUI {
   public hideCountdown(): void {
     if (this.countdownOverlay) {
       this.countdownOverlay.style.display = "none";
+    }
+  }
+
+  public showLoadingScreen(durationMs: number): void {
+    if (this.loadingOverlay && this.loaderFill) {
+      this.loadingOverlay.style.display = "flex";
+      this.loaderFill.style.transition = "none";
+      this.loaderFill.style.width = "0%";
+      
+      // Force reflow
+      void this.loaderFill.offsetWidth;
+      
+      this.loaderFill.style.transition = `width ${durationMs}ms linear`;
+      this.loaderFill.style.width = "100%";
+    }
+  }
+
+  public hideLoadingScreen(): void {
+    if (this.loadingOverlay) {
+      this.loadingOverlay.style.display = "none";
     }
   }
 

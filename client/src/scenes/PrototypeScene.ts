@@ -9,7 +9,9 @@ import {
   Vector3,
   ShadowGenerator,
   DynamicTexture,
+  Ray,
 } from "@babylonjs/core";
+import * as BABYLON from "@babylonjs/core";
 import { GameEngine } from "../core/Engine";
 import { KartVisual } from "../entities/KartVisual";
 import { KartController } from "../entities/KartController";
@@ -192,18 +194,28 @@ export class PrototypeScene {
            result.meshes.forEach(m => m.computeWorldMatrix(true));
         }
 
-        // Snap kart back up to top so it lands on the new arena
-        if (this.kartController) {
-           this.kartController.verticalVelocity = 0;
-           this.kartController.position.y = 100.0;
-        }
-
         this.arenaLoaded = true;
 
       }).catch((err) => {
         console.error("⚠️ Failed to load battle arena:", err);
       });
     });
+  }
+
+  public isFullyLoaded(): boolean {
+    return this.arenaLoaded;
+  }
+
+  public getFloorHeight(x: number, z: number): number {
+    if (!this.arenaLoaded) return 100.0;
+    
+    // Drop a ray from way up high straight down to find the solid floor
+    const ray = new BABYLON.Ray(new Vector3(x, 10000.0, z), new Vector3(0, -1, 0), 20000.0);
+    const hit = this.scene.pickWithRay(ray, (mesh) => mesh.checkCollisions);
+    if (hit && hit.hit && hit.pickedPoint) {
+      return hit.pickedPoint.y;
+    }
+    return 100.0; // Fallback
   }
 
   public update(deltaTime: number, inputManager: InputManager, isFrozen: boolean = false): void {

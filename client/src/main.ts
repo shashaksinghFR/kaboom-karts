@@ -21,6 +21,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // 1. Initialize Canvas, Engine & Scene
   const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
+  let isArenaDeploying = false;
   const engine = new GameEngine(canvas);
   const inputManager = new InputManager();
   const hud = new HudOverlay();
@@ -157,8 +158,24 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       if (newPhase === "countdown") {
         lobbyUI.showScreen("game");
-        lobbyUI.showCountdown(state.countdownTimer);
-        prototypeScene.kartVisual.setVisible(true);
+        prototypeScene.kartVisual.setVisible(false);
+        lobbyUI.hideCountdown();
+        
+        isArenaDeploying = true;
+        lobbyUI.showLoadingScreen(4000);
+        const deployStartTime = Date.now();
+        
+        const checkDeploy = () => {
+          if (prototypeScene.isFullyLoaded() && Date.now() - deployStartTime >= 4000) {
+            isArenaDeploying = false;
+            lobbyUI.hideLoadingScreen();
+            prototypeScene.kartVisual.setVisible(true);
+          } else {
+            setTimeout(checkDeploy, 100);
+          }
+        };
+        checkDeploy();
+        
         hasSetInitialSpawn = false;
         lastCountdownTick = -1;
       } else if (newPhase === "playing") {
@@ -184,7 +201,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Active countdown tick sound effect (5, 4, 3, 2, 1)
-    if (newPhase === "countdown") {
+    if (newPhase === "countdown" && !isArenaDeploying) {
       lobbyUI.showCountdown(state.countdownTimer);
       if (state.countdownTimer !== lastCountdownTick && state.countdownTimer > 0) {
         lastCountdownTick = state.countdownTimer;
@@ -196,8 +213,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (state.players) {
       const myPlayer = state.players.get(networkClient.localSessionId);
       if (myPlayer) {
-        if (!hasSetInitialSpawn && (newPhase === "countdown" || newPhase === "playing")) {
-          prototypeScene.setSpawnTransform(myPlayer.x, myPlayer.y, myPlayer.z, myPlayer.yaw);
+        if (!hasSetInitialSpawn && !isArenaDeploying && (newPhase === "countdown" || newPhase === "playing")) {
+          // Find the precise floor height using raycasting!
+          const floorY = prototypeScene.getFloorHeight(myPlayer.x, myPlayer.z);
+          prototypeScene.setSpawnTransform(myPlayer.x, floorY + 2.0, myPlayer.z, myPlayer.yaw);
+          
           prototypeScene.kartVisual.setPlayerColor(myPlayer.colorIndex, myPlayer.team);
           const chosenModel = myPlayer.kartModelIndex ?? myPlayer.slotIndex ?? 0;
           prototypeScene.kartVisual.loadKartModel(chosenModel);

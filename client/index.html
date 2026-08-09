@@ -227,6 +227,14 @@
         </div>
       </div>
 
+      <!-- VIEW 2.5: Loading Screen -->
+      <div id="loading-overlay" class="overlay-screen" style="display: none; z-index: 100; flex-direction: column; justify-content: center; align-items: center; background: #060913;">
+        <h2 style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 2rem; margin-bottom: 20px;">DEPLOYING ARENA...</h2>
+        <div class="loader-bar" style="width: 300px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden;">
+          <div id="loader-fill" style="width: 0%; height: 100%; background: var(--accent-cyan); transition: width 4s linear;"></div>
+        </div>
+      </div>
+
       <!-- VIEW 3: In-Game Battle HUD Overlay -->
       <div id="ui-overlay" class="ui-layer" style="display: none;">
         <!-- Top Header -->
