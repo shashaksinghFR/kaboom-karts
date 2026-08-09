@@ -186,27 +186,52 @@ export class PrototypeScene {
           mesh.receiveShadows = true;
         });
 
-        // Scale the root node of the loaded arena by 500x
         if (result.meshes.length > 0) {
            const rootNode = result.meshes[0];
            this.arenaRoot = rootNode;
-           rootNode.scaling.scaleInPlace(500);
-           
+
+           // *** CRITICAL FIX ***
+           // This model was authored Z-up (Source-engine/FBX pipeline) and was
+           // never axis-converted before export to glTF, which requires Y-up.
+           // Its "floor" meshes are flat in Z (verified: Z ~0.10 constant),
+           // meaning the whole arena is tipped 90° from Babylon's point of view.
+           // Rotating -90° about X maps the model's Z(up) -> world Y(up).
+           rootNode.rotation.x = -Math.PI / 2;
+
+           // The model is ALREADY close to the intended ~200m footprint
+           // (native bounding box is roughly 447 x 244 x 72). The old 500x
+           // multiplier inflated it to ~225,000 units wide, which is why the
+           // camera/raycast had to be hacked with minZ/maxZ = 80000 and why
+           // the arena appeared to vanish or the kart fell forever - both the
+           // far clip plane and the raycast range were smaller than the
+           // (mis-scaled) geometry. Use a mild, sane multiplier instead.
+           const ARENA_SCALE = 1.0;
+           rootNode.scaling.scaleInPlace(ARENA_SCALE);
+
            // Ensure transformations are applied to children for correct physics collisions
            result.meshes.forEach(m => m.computeWorldMatrix(true));
-           
+
            // Auto-align the arena so it is perfectly centered horizontally at (0,0)
            // This guarantees the raycast dropped at (0,0) will hit the drivable surface!
            const boundingInfo = rootNode.getHierarchyBoundingVectors();
            const center = boundingInfo.min.add(boundingInfo.max).scale(0.5);
-           
+
            rootNode.position.x -= center.x;
            rootNode.position.z -= center.z;
-           
-           console.log(`🏟️ Arena horizontally centered. Shifted by (${center.x}, ${center.z}).`);
-           
+           // Also drop the arena so its lowest point sits at y = 0, since the
+           // rotation fix no longer guarantees the floor lands exactly at 0.
+           rootNode.position.y -= boundingInfo.min.y;
+
+           console.log(`🏟️ Arena axis-corrected, scaled ${ARENA_SCALE}x, and centered. Shift: (${center.x.toFixed(2)}, ${center.z.toFixed(2)}), floor drop: ${boundingInfo.min.y.toFixed(2)}.`);
+
            // Recompute matrices after shift
            result.meshes.forEach(m => m.computeWorldMatrix(true));
+
+           // Refresh bounding info per-mesh now that geometry has been
+           // rotated/scaled/moved, so collisions and picking use correct bounds.
+           result.meshes.forEach(m => {
+             if ((m as any).refreshBoundingInfo) (m as any).refreshBoundingInfo();
+           });
         }
 
         this.arenaLoaded = true;
@@ -224,8 +249,10 @@ export class PrototypeScene {
   public getFloorHeight(x: number, z: number): number {
     if (!this.arenaLoaded || !this.arenaRoot) return 1000.0;
     
-    // Drop a ray from way up high straight down to find the solid floor
-    const ray = new BABYLON.Ray(new Vector3(x, 80000.0, z), new Vector3(0, -1, 0), 160000.0);
+    // Drop a ray from above the arena straight down to find the solid floor.
+    // 2000 units is comfortably above any reasonable arena height now that
+    // the model is at its correct (~1x) scale.
+    const ray = new BABYLON.Ray(new Vector3(x, 2000.0, z), new Vector3(0, -1, 0), 4000.0);
     const hit = this.scene.pickWithRay(ray, (mesh) => mesh.checkCollisions);
     if (hit && hit.hit && hit.pickedPoint) {
       return hit.pickedPoint.y;
