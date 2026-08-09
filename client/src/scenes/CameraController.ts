@@ -20,8 +20,8 @@ export class CameraController {
   private currentMode: CameraMode = CameraMode.CHASE;
 
   // Fixed camera distance and height
-  public distanceBehind: number = 14.0;  
-  public heightAbove: number = 4.5;     
+  public distanceBehind: number = 8.0;   // Brought closer
+  public heightAbove: number = 3.0;      // Lowered slightly
   public lookAheadOffset: number = 3.2; 
   public rotationLerpSpeed: number = 14.0;
 
@@ -62,7 +62,7 @@ export class CameraController {
     );
     this.chaseCamera.fov = 0.85; // Slightly narrower FOV for a cinematic look from distance
     this.chaseCamera.minZ = 0.1;
-    this.chaseCamera.maxZ = 4000;
+    this.chaseCamera.maxZ = 3000000; // Allow huge scaling
     this.chaseCamera.lowerRadiusLimit = this.distanceBehind; // Lock distance exactly
     this.chaseCamera.upperRadiusLimit = this.distanceBehind; 
     this.chaseCamera.lowerBetaLimit = 0.05;
@@ -75,13 +75,18 @@ export class CameraController {
     this.scene.onPointerObservable.add((pi) => {
       if (this.currentMode !== CameraMode.CHASE) return;
       
-      const evt = pi.event as any;
-      // Safely extract coordinates for both Mouse and Touch (prevents NaN camera crashes!)
-      const clientX = evt.clientX !== undefined ? evt.clientX : (evt.touches && evt.touches.length > 0 ? evt.touches[0].clientX : this.scene.pointerX);
-      const clientY = evt.clientY !== undefined ? evt.clientY : (evt.touches && evt.touches.length > 0 ? evt.touches[0].clientY : this.scene.pointerY);
-      const pointerId = evt.pointerId !== undefined ? evt.pointerId : (evt.changedTouches && evt.changedTouches.length > 0 ? evt.changedTouches[0].identifier : 0);
+      const evt = pi.event as PointerEvent;
+      if (!evt) return;
+
+      const pointerId = evt.pointerId;
+      const clientX = evt.clientX;
+      const clientY = evt.clientY;
       
+      // Ignore if this is from a mouse and it's not the left click (to prevent right-click interference)
+      if (evt.pointerType === "mouse" && evt.buttons !== 1 && pi.type !== 2) return;
+
       if (pi.type === 1) { // POINTERDOWN
+        // Only grab free-look if we aren't already free-looking with another pointer
         if (!this.isFreeLooking) {
           this.isFreeLooking = true;
           this.freeLookTimer = 0;
@@ -96,14 +101,11 @@ export class CameraController {
           this.lastPointerX = clientX;
           this.lastPointerY = clientY;
           
-          // Apply rotation safely, double check for NaN
-          if (!isNaN(dx) && !isNaN(dy)) {
-            this.chaseCamera.alpha -= dx * 0.006;
-            this.chaseCamera.beta -= dy * 0.006;
-            
-            // Clamp beta manually just in case
-            this.chaseCamera.beta = Math.max(this.chaseCamera.lowerBetaLimit || 0.05, Math.min(this.chaseCamera.upperBetaLimit || Math.PI / 2.1, this.chaseCamera.beta));
-          }
+          this.chaseCamera.alpha -= dx * 0.005;
+          this.chaseCamera.beta -= dy * 0.005;
+          
+          // Clamp beta manually to prevent flipping
+          this.chaseCamera.beta = Math.max(0.05, Math.min(Math.PI / 2.1, this.chaseCamera.beta));
         }
       } else if (pi.type === 2 || pi.type === 8) { // POINTERUP or POINTEROUT
         if (this.isFreeLooking && this.dragPointerId === pointerId) {

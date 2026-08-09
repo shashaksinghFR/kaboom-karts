@@ -127,7 +127,7 @@ export class PrototypeScene {
     // A. Skybox Sphere with Crimson Cyber Nebula & Spire Skyline
     const skyDome = MeshBuilder.CreateSphere(
       "StadiumSkyDome",
-      { diameter: 6000, segments: 32 },
+      { diameter: 3000000, segments: 32 }, // Scaled 500x
       this.scene
     );
     skyDome.infiniteDistance = true;
@@ -178,10 +178,14 @@ export class PrototypeScene {
           // Enable collisions and shadows for all arena meshes
           mesh.checkCollisions = true;
           mesh.receiveShadows = true;
-
-          // Some models are nested deeply; ensure their absolute scaling is correct if needed,
-          // but typically we can just leave it as authored unless calibration is required.
         });
+
+        // Scale the root node of the loaded arena by 500x
+        if (result.meshes.length > 0) {
+           // GLB loader usually puts everything under a root node `__root__` which is result.meshes[0]
+           result.meshes[0].scaling.scaleInPlace(500);
+        }
+
       }).catch((err) => {
         console.error("⚠️ Failed to load battle arena:", err);
       });
