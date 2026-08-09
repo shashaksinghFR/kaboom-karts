@@ -46,6 +46,9 @@ export class PrototypeScene {
     impactZ: number;
   }) => void;
 
+  private isFrozen: boolean = false;
+  private arenaLoaded: boolean = false;
+
   constructor(gameEngine: GameEngine) {
     const rawEngine = gameEngine.getRawEngine();
     const canvas = gameEngine.getCanvas();
@@ -184,7 +187,18 @@ export class PrototypeScene {
         if (result.meshes.length > 0) {
            // GLB loader usually puts everything under a root node `__root__` which is result.meshes[0]
            result.meshes[0].scaling.scaleInPlace(500);
+           
+           // Ensure transformations are applied to children for correct physics collisions
+           result.meshes.forEach(m => m.computeWorldMatrix(true));
         }
+
+        // Snap kart back up to top so it lands on the new arena
+        if (this.kartController) {
+           this.kartController.verticalVelocity = 0;
+           this.kartController.position.y = 100.0;
+        }
+
+        this.arenaLoaded = true;
 
       }).catch((err) => {
         console.error("⚠️ Failed to load battle arena:", err);
@@ -206,6 +220,11 @@ export class PrototypeScene {
     // Toggle Camera mode if C was pressed
     if (input.toggleCamera) {
       this.cameraController.toggleMode();
+    }
+
+    if (!this.arenaLoaded) {
+      // Do not update kart physics/movement until the arena is fully loaded
+      return;
     }
 
     // Update Kart Driving Physics & Visuals
