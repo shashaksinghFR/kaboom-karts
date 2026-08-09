@@ -124,13 +124,12 @@ export class PrototypeScene {
     const arenaSize = SCENE_CONFIG.DEFAULT_GROUND_SIZE; // 200m
     const arenaRadius = (arenaSize * 0.95) / 2; // ~95m
 
-    // A. Skybox Dome with Crimson Cyber Nebula & Spire Skyline (Reference Image Inspired)
+    // A. Skybox Sphere with Crimson Cyber Nebula & Spire Skyline
     const skyDome = MeshBuilder.CreateSphere(
       "StadiumSkyDome",
-      { diameter: 390, segments: 24, slice: 0.5 },
+      { diameter: 8000, segments: 32 },
       this.scene
     );
-    skyDome.position.y = -10;
     skyDome.infiniteDistance = true;
 
     const skyMat = new StandardMaterial("StadiumSkyMat", this.scene);

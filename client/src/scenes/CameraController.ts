@@ -19,14 +19,19 @@ export class CameraController {
   private chaseCamera: ArcRotateCamera;
   private currentMode: CameraMode = CameraMode.CHASE;
 
-  // Close-up arcade chase camera parameters
-  public distanceBehind: number = 4.8;  // Close to the car
-  public heightAbove: number = 2.1;     // Lower, dynamic angle
-  public lookAheadOffset: number = 3.2; // Forward perspective
+  // Fixed camera distance and height
+  public distanceBehind: number = 14.0;  
+  public heightAbove: number = 4.5;     
+  public lookAheadOffset: number = 3.2; 
   public rotationLerpSpeed: number = 14.0;
 
   private isFreeLooking: boolean = false;
   private freeLookTimer: number = 0;
+  
+  // Custom drag state
+  private dragPointerId: number = -1;
+  private lastPointerX: number = 0;
+  private lastPointerY: number = 0;
 
   constructor(scene: Scene, canvas: HTMLCanvasElement) {
     this.scene = scene;
@@ -55,23 +60,49 @@ export class CameraController {
       Vector3.Zero(),
       this.scene
     );
-    this.chaseCamera.fov = 0.90;
+    this.chaseCamera.fov = 0.85; // Slightly narrower FOV for a cinematic look from distance
     this.chaseCamera.minZ = 0.1;
-    this.chaseCamera.maxZ = 400;
-    this.chaseCamera.lowerRadiusLimit = 2.5;
-    this.chaseCamera.upperRadiusLimit = 15.0;
+    this.chaseCamera.maxZ = 4000;
+    this.chaseCamera.lowerRadiusLimit = this.distanceBehind; // Lock distance exactly
+    this.chaseCamera.upperRadiusLimit = this.distanceBehind; 
     this.chaseCamera.lowerBetaLimit = 0.05;
-    this.chaseCamera.upperBetaLimit = Math.PI / 1.8;
-    this.chaseCamera.panningSensibility = 0; // Disable panning, only rotation
+    this.chaseCamera.upperBetaLimit = Math.PI / 2.1; // Prevent going underground
+    
+    // Disable default Babylon controls to perfectly handle multi-touch manually
+    this.chaseCamera.detachControl();
 
-    // Setup free-look pointer detection
+    // Setup custom free-look multi-touch pointer detection
     this.scene.onPointerObservable.add((pi) => {
-      if (this.currentMode === CameraMode.CHASE) {
-        if (pi.type === 1) { // POINTERDOWN
+      if (this.currentMode !== CameraMode.CHASE) return;
+      
+      const evt = pi.event as PointerEvent;
+      
+      if (pi.type === 1) { // POINTERDOWN
+        if (!this.isFreeLooking) {
           this.isFreeLooking = true;
           this.freeLookTimer = 0;
-        } else if (pi.type === 2) { // POINTERUP
+          this.dragPointerId = evt.pointerId;
+          this.lastPointerX = evt.clientX;
+          this.lastPointerY = evt.clientY;
+        }
+      } else if (pi.type === 4) { // POINTERMOVE
+        if (this.isFreeLooking && this.dragPointerId === evt.pointerId) {
+          const dx = evt.clientX - this.lastPointerX;
+          const dy = evt.clientY - this.lastPointerY;
+          this.lastPointerX = evt.clientX;
+          this.lastPointerY = evt.clientY;
+          
+          // Apply rotation
+          this.chaseCamera.alpha -= dx * 0.006;
+          this.chaseCamera.beta -= dy * 0.006;
+          
+          // Clamp beta manually just in case
+          this.chaseCamera.beta = Math.max(this.chaseCamera.lowerBetaLimit || 0.05, Math.min(this.chaseCamera.upperBetaLimit || Math.PI / 2.1, this.chaseCamera.beta));
+        }
+      } else if (pi.type === 2 || pi.type === 8) { // POINTERUP or POINTEROUT
+        if (this.isFreeLooking && this.dragPointerId === evt.pointerId) {
           this.isFreeLooking = false;
+          this.dragPointerId = -1;
         }
       }
     });
@@ -84,11 +115,11 @@ export class CameraController {
     this.currentMode = mode;
     if (mode === CameraMode.CHASE) {
       this.orbitCamera.detachControl();
-      this.chaseCamera.attachControl(this.canvas, true);
+      // We purposefully DO NOT attachControl for chaseCamera to avoid conflicts with our custom drag logic
       this.scene.activeCamera = this.chaseCamera;
       this.isFreeLooking = false;
+      this.dragPointerId = -1;
     } else {
-      this.chaseCamera.detachControl();
       this.orbitCamera.attachControl(this.canvas, true);
       this.scene.activeCamera = this.orbitCamera;
     }
@@ -127,7 +158,7 @@ export class CameraController {
       this.freeLookTimer += dt;
       if (this.freeLookTimer > 0.4) { // Delay before snapping back
         let targetAlpha = -kart.yaw - Math.PI / 2;
-        let targetBeta = Math.PI / 3.2;
+        let targetBeta = Math.PI / 3.4; // Elevated angle
 
         // Normalize alpha to find shortest rotation path
         let currentAlpha = this.chaseCamera.alpha;
@@ -142,9 +173,9 @@ export class CameraController {
       }
     }
 
-    // Dynamic FOV speed effect
+    // Dynamic FOV speed effect (kept minimal to avoid warping distance perception)
     const speedRatio = Math.min(Math.abs(kart.forwardSpeed) / (kart.tuning.maxForwardSpeed * kart.tuning.boostMultiplier), 1.0);
-    const targetFov = 0.90 + speedRatio * 0.12;
-    this.chaseCamera.fov += (targetFov - this.chaseCamera.fov) * dt * 6;
+    const targetFov = 0.85 + speedRatio * 0.05;
+    this.chaseCamera.fov += (targetFov - this.chaseCamera.fov) * dt * 4;
   }
 }
