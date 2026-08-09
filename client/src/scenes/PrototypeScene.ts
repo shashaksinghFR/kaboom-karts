@@ -177,8 +177,8 @@ export class PrototypeScene {
 
     // B. Load Custom 3D Battle Arena Model
     import("@babylonjs/core").then(({ SceneLoader }) => {
-      SceneLoader.ImportMeshAsync("", "/models/", "battlearena.glb", this.scene).then((result) => {
-        console.log(`🏟️ Battle Arena loaded successfully (${result.meshes.length} meshes)`);
+      SceneLoader.ImportMeshAsync("", "/models/", "battlearena2.glb", this.scene).then((result) => {
+        console.log(`🏟️ Battle Arena 2 loaded successfully (${result.meshes.length} meshes)`);
         
         result.meshes.forEach((mesh) => {
           // Enable collisions and shadows for all arena meshes
@@ -190,22 +190,9 @@ export class PrototypeScene {
            const rootNode = result.meshes[0];
            this.arenaRoot = rootNode;
 
-           // *** CRITICAL FIX ***
-           // This model was authored Z-up (Source-engine/FBX pipeline) and was
-           // never axis-converted before export to glTF, which requires Y-up.
-           // Its "floor" meshes are flat in Z (verified: Z ~0.10 constant),
-           // meaning the whole arena is tipped 90° from Babylon's point of view.
-           // Rotating -90° about X maps the model's Z(up) -> world Y(up).
-           rootNode.rotation.x = -Math.PI / 2;
-
-           // The model is ALREADY close to the intended ~200m footprint
-           // (native bounding box is roughly 447 x 244 x 72). The old 500x
-           // multiplier inflated it to ~225,000 units wide, which is why the
-           // camera/raycast had to be hacked with minZ/maxZ = 80000 and why
-           // the arena appeared to vanish or the kart fell forever - both the
-           // far clip plane and the raycast range were smaller than the
-           // (mis-scaled) geometry. Use a mild, sane multiplier instead.
-           const ARENA_SCALE = 1.0;
+           // The user requested the arena to be massive ("like a player in a football field").
+           // We scale it up substantially.
+           const ARENA_SCALE = 100.0;
            rootNode.scaling.scaleInPlace(ARENA_SCALE);
 
            // Ensure transformations are applied to children for correct physics collisions
@@ -218,11 +205,10 @@ export class PrototypeScene {
 
            rootNode.position.x -= center.x;
            rootNode.position.z -= center.z;
-           // Also drop the arena so its lowest point sits at y = 0, since the
-           // rotation fix no longer guarantees the floor lands exactly at 0.
+           // Also drop the arena so its lowest point sits at y = 0
            rootNode.position.y -= boundingInfo.min.y;
 
-           console.log(`🏟️ Arena axis-corrected, scaled ${ARENA_SCALE}x, and centered. Shift: (${center.x.toFixed(2)}, ${center.z.toFixed(2)}), floor drop: ${boundingInfo.min.y.toFixed(2)}.`);
+           console.log(`🏟️ Arena 2 scaled ${ARENA_SCALE}x, and centered. Shift: (${center.x.toFixed(2)}, ${center.z.toFixed(2)}), floor drop: ${boundingInfo.min.y.toFixed(2)}.`);
 
            // Recompute matrices after shift
            result.meshes.forEach(m => m.computeWorldMatrix(true));
