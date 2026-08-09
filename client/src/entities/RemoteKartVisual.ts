@@ -164,7 +164,7 @@ export class RemoteKartVisual {
   private setupNameplate(): void {
     this.nameplateMesh = MeshBuilder.CreatePlane(
       "NameplatePlane",
-      { width: 4.8, height: 1.3 },
+      { width: 1.8, height: 0.5 }, // Scaled down to be reasonable
       this.scene
     );
     this.nameplateMesh.parent = this.rootNode;
@@ -255,7 +255,8 @@ export class RemoteKartVisual {
   }
 
   private async tryImportMesh(url: string): Promise<void> {
-    const result = await SceneLoader.ImportMeshAsync("", url, "", this.scene);
+    // Correct BabylonJS syntax: rootUrl is empty, sceneFilename is the full absolute path
+    const result = await SceneLoader.ImportMeshAsync("", "", url, this.scene);
 
     this.meshes.forEach((m) => m.dispose());
     this.meshes = result.meshes;
@@ -388,9 +389,9 @@ export class RemoteKartVisual {
     }
 
     // Fixed distance scaling for nameplate (but clamped to not get too big)
-    if (this.scene.activeCamera) {
+    if (this.nameplateMesh && this.scene.activeCamera) {
       const dist = Vector3.Distance(this.nameplateMesh.getAbsolutePosition(), this.scene.activeCamera.globalPosition);
-      const scale = Math.max(0.6, Math.min(2.0, dist / 12.0));
+      const scale = Math.max(1.0, Math.min(1.8, dist * 0.05)); // Dramatically reduced scaling factor
       this.nameplateMesh.scaling.set(scale, scale, scale);
     }
   }

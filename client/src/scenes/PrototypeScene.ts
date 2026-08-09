@@ -135,6 +135,7 @@ export class PrototypeScene {
     const skyMat = new StandardMaterial("StadiumSkyMat", this.scene);
     skyMat.backFaceCulling = false;
     skyMat.disableLighting = true;
+    skyMat.fogEnabled = false; // Prevent fog from turning the sky into a solid grey wall
 
     const skyTex = new DynamicTexture("StadiumSkyTex", { width: 1024, height: 512 }, this.scene, false);
     const sCtx = skyTex.getContext() as CanvasRenderingContext2D;
