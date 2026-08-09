@@ -156,7 +156,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (newPhase !== currentPhase) {
       currentPhase = newPhase;
 
-      if (newPhase === "countdown") {
+      if (newPhase === "countdown" || (newPhase === "playing" && !hasSetInitialSpawn && !isArenaDeploying)) {
         lobbyUI.showScreen("game");
         prototypeScene.kartVisual.setVisible(false);
         lobbyUI.hideCountdown();
@@ -181,7 +181,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       } else if (newPhase === "playing") {
         lobbyUI.showScreen("game");
         lobbyUI.hideCountdown();
-        prototypeScene.kartVisual.setVisible(true);
+        if (!isArenaDeploying) {
+          prototypeScene.kartVisual.setVisible(true);
+        }
         soundManager.playCountdown(0); // High GO! chime
         soundManager.ensureBGMPlaying();
       } else if (newPhase === "lobby") {

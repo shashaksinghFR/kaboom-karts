@@ -129,14 +129,6 @@ export class PrototypeScene {
     this.scene.collisionsEnabled = true;
     this.scene.gravity = new Vector3(0, -9.81, 0);
 
-    // 1.5 Create Permanent Invisible Collision Floor
-    // This ensures cars NEVER fall into the abyss while the detailed 3D arena is loading in the background
-    const collisionFloor = MeshBuilder.CreateGround("CollisionFloor", { width: 80000, height: 80000 }, this.scene);
-    collisionFloor.position.y = 0.0; // Match the exact ground level of the 3D model
-    collisionFloor.isVisible = false; // Completely invisible
-    collisionFloor.checkCollisions = true; // Fully solid for physics
-    collisionFloor.receiveShadows = false;
-
     // A. Skybox Sphere with Crimson Cyber Nebula & Spire Skyline
     const skyDome = MeshBuilder.CreateSphere(
       "StadiumSkyDome",
@@ -201,17 +193,21 @@ export class PrototypeScene {
            // Ensure transformations are applied to children for correct physics collisions
            result.meshes.forEach(m => m.computeWorldMatrix(true));
            
-           // Auto-align the arena so its actual floor matches our invisible CollisionFloor (Y = 0)
-           const ray = new BABYLON.Ray(new Vector3(0, 80000.0, 0), new Vector3(0, -1, 0), 160000.0);
-           const hit = this.scene.pickWithRay(ray, (mesh) => mesh.checkCollisions && mesh !== this.scene.getMeshByName("CollisionFloor"));
-           if (hit && hit.hit && hit.pickedPoint) {
-              const floorOffset = hit.pickedPoint.y;
-              rootNode.position.y -= floorOffset;
-              console.log(`🏟️ Arena floor detected at ${floorOffset}, shifting model down to Y=0`);
-              
-              // Recompute matrices after shift
-              result.meshes.forEach(m => m.computeWorldMatrix(true));
-           }
+           // Auto-align the arena so its absolute lowest point rests precisely at Y = 0
+           // AND center it perfectly horizontally, just in case the 3D model was exported far away from (0,0)
+           const boundingInfo = rootNode.getHierarchyBoundingVectors();
+           
+           const center = boundingInfo.min.add(boundingInfo.max).scale(0.5);
+           const floorOffset = boundingInfo.min.y;
+           
+           rootNode.position.x -= center.x;
+           rootNode.position.y -= floorOffset;
+           rootNode.position.z -= center.z;
+           
+           console.log(`🏟️ Arena floor detected at ${floorOffset}, center at (${center.x}, ${center.z}). Shifting model to exact origin.`);
+           
+           // Recompute matrices after shift
+           result.meshes.forEach(m => m.computeWorldMatrix(true));
         }
 
         this.arenaLoaded = true;
