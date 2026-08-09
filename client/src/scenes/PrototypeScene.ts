@@ -205,10 +205,12 @@ export class PrototypeScene {
 
            rootNode.position.x -= center.x;
            rootNode.position.z -= center.z;
-           // Also drop the arena so its lowest point sits at y = 0
-           rootNode.position.y -= boundingInfo.min.y;
+           // We DO NOT drop the arena's lowest point to Y=0 because this model
+           // has a massive sky sphere. If we drop min.y to 0, it pushes the
+           // actual ground miles into the air!
+           rootNode.position.y = 0;
 
-           console.log(`🏟️ Arena 2 scaled ${ARENA_SCALE}x, and centered. Shift: (${center.x.toFixed(2)}, ${center.z.toFixed(2)}), floor drop: ${boundingInfo.min.y.toFixed(2)}.`);
+           console.log(`🏟️ Arena 2 scaled ${ARENA_SCALE}x, and centered X/Z. Shift: (${center.x.toFixed(2)}, ${center.z.toFixed(2)}).`);
 
            // Recompute matrices after shift
            result.meshes.forEach(m => m.computeWorldMatrix(true));
@@ -235,19 +237,17 @@ export class PrototypeScene {
   public getFloorHeight(x: number, z: number): number {
     if (!this.arenaLoaded || !this.arenaRoot) return 1000.0;
     
-    // Drop a ray from above the arena straight down to find the solid floor.
-    // 2000 units is comfortably above any reasonable arena height now that
-    // the model is at its correct (~1x) scale.
+    // Drop a ray from high up (but INSIDE the sky sphere) straight down to find the solid floor.
+    // 2000 units should be safely inside the sky sphere, but above the ground.
     const ray = new BABYLON.Ray(new Vector3(x, 2000.0, z), new Vector3(0, -1, 0), 4000.0);
     const hit = this.scene.pickWithRay(ray, (mesh) => mesh.checkCollisions);
     if (hit && hit.hit && hit.pickedPoint) {
       return hit.pickedPoint.y;
     }
     
-    // Fallback: spawn the kart ABOVE the absolute highest point of the arena model
-    // This perfectly implements the user's request to drop them onto the arena
-    const bounds = this.arenaRoot.getHierarchyBoundingVectors();
-    return bounds.max.y + 100.0;
+    // Fallback: spawn the kart at Y=50 (instead of above the entire bounding box, 
+    // which would place us on the roof of the sky sphere).
+    return 50.0;
   }
 
   public update(deltaTime: number, inputManager: InputManager, isFrozen: boolean = false): void {
