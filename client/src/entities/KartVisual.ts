@@ -151,7 +151,7 @@ export class KartVisual implements IKartVisual {
 
   public async loadModel(modelUrl: string = "/models/kart1.glb"): Promise<void> {
     try {
-      const result = await SceneLoader.ImportMeshAsync("", "", modelUrl, this.scene);
+      const result = await SceneLoader.ImportMeshAsync("", modelUrl, "", this.scene);
 
       // Clean up previously loaded meshes
       this.meshes.forEach((m) => m.dispose());

@@ -195,22 +195,6 @@ export class RemoteKartVisual {
 
     ctx.clearRect(0, 0, 512, 140);
 
-    // High-Contrast High-Visibility Dark Capsule Badge
-    const borderColor = this.team === "blue" ? "#00f0ff" : this.team === "red" ? "#ff2a4b" : "#00f0ff";
-    const bgColor = this.team === "blue" ? "rgba(8, 26, 46, 0.90)" : this.team === "red" ? "rgba(46, 8, 18, 0.90)" : "rgba(10, 14, 26, 0.90)";
-
-    // Draw Capsule Pill
-    ctx.beginPath();
-    ctx.roundRect(16, 12, 480, 116, 28);
-    ctx.fillStyle = bgColor;
-    ctx.fill();
-
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 4;
-    ctx.shadowColor = borderColor;
-    ctx.shadowBlur = 12;
-    ctx.stroke();
-
     // Player Name
     ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
     ctx.shadowBlur = 6;
@@ -271,7 +255,7 @@ export class RemoteKartVisual {
   }
 
   private async tryImportMesh(url: string): Promise<void> {
-    const result = await SceneLoader.ImportMeshAsync("", "", url, this.scene);
+    const result = await SceneLoader.ImportMeshAsync("", url, "", this.scene);
 
     this.meshes.forEach((m) => m.dispose());
     this.meshes = result.meshes;
@@ -401,6 +385,13 @@ export class RemoteKartVisual {
     } else {
       if (this.leftTrailMesh) this.leftTrailMesh.isVisible = false;
       if (this.rightTrailMesh) this.rightTrailMesh.isVisible = false;
+    }
+
+    // Fixed distance scaling for nameplate (but clamped to not get too big)
+    if (this.scene.activeCamera) {
+      const dist = Vector3.Distance(this.nameplateMesh.getAbsolutePosition(), this.scene.activeCamera.globalPosition);
+      const scale = Math.max(0.6, Math.min(2.0, dist / 12.0));
+      this.nameplateMesh.scaling.set(scale, scale, scale);
     }
   }
 

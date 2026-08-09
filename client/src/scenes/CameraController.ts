@@ -16,18 +16,17 @@ export class CameraController {
   private scene: Scene;
   private canvas: HTMLCanvasElement;
   private orbitCamera: ArcRotateCamera;
-  private chaseCamera: UniversalCamera;
+  private chaseCamera: ArcRotateCamera;
   private currentMode: CameraMode = CameraMode.CHASE;
 
   // Close-up arcade chase camera parameters
   public distanceBehind: number = 4.8;  // Close to the car
   public heightAbove: number = 2.1;     // Lower, dynamic angle
   public lookAheadOffset: number = 3.2; // Forward perspective
-  public positionLerpSpeed: number = 14.0;
   public rotationLerpSpeed: number = 14.0;
 
-  private currentCameraPos: Vector3 = new Vector3(0, 3, -6);
-  private currentLookTarget: Vector3 = new Vector3(0, 1, 0);
+  private isFreeLooking: boolean = false;
+  private freeLookTimer: number = 0;
 
   constructor(scene: Scene, canvas: HTMLCanvasElement) {
     this.scene = scene;
@@ -47,15 +46,35 @@ export class CameraController {
     this.orbitCamera.lowerBetaLimit = 0.2;
     this.orbitCamera.upperBetaLimit = Math.PI / 2.05;
 
-    // 2. Third-Person Chase Camera (close-up arcade view)
-    this.chaseCamera = new UniversalCamera(
+    // 2. Third-Person Chase Camera (Free-Look enabled)
+    this.chaseCamera = new ArcRotateCamera(
       "ChaseCamera",
-      new Vector3(0, 3, -6),
+      -Math.PI / 2, // alpha
+      Math.PI / 3.2, // beta
+      this.distanceBehind, // radius
+      Vector3.Zero(),
       this.scene
     );
     this.chaseCamera.fov = 0.90;
     this.chaseCamera.minZ = 0.1;
     this.chaseCamera.maxZ = 400;
+    this.chaseCamera.lowerRadiusLimit = 2.5;
+    this.chaseCamera.upperRadiusLimit = 15.0;
+    this.chaseCamera.lowerBetaLimit = 0.05;
+    this.chaseCamera.upperBetaLimit = Math.PI / 1.8;
+    this.chaseCamera.panningSensibility = 0; // Disable panning, only rotation
+
+    // Setup free-look pointer detection
+    this.scene.onPointerObservable.add((pi) => {
+      if (this.currentMode === CameraMode.CHASE) {
+        if (pi.type === 1) { // POINTERDOWN
+          this.isFreeLooking = true;
+          this.freeLookTimer = 0;
+        } else if (pi.type === 2) { // POINTERUP
+          this.isFreeLooking = false;
+        }
+      }
+    });
 
     // Default to Chase Camera
     this.setMode(CameraMode.CHASE);
@@ -65,8 +84,11 @@ export class CameraController {
     this.currentMode = mode;
     if (mode === CameraMode.CHASE) {
       this.orbitCamera.detachControl();
+      this.chaseCamera.attachControl(this.canvas, true);
       this.scene.activeCamera = this.chaseCamera;
+      this.isFreeLooking = false;
     } else {
+      this.chaseCamera.detachControl();
       this.orbitCamera.attachControl(this.canvas, true);
       this.scene.activeCamera = this.orbitCamera;
     }
@@ -92,32 +114,33 @@ export class CameraController {
     }
 
     // Chase Camera update:
-    const sinYaw = Math.sin(kart.yaw);
-    const cosYaw = Math.cos(kart.yaw);
-
-    // Position tightly behind kart based on heading
-    const desiredPos = new Vector3(
-      kart.position.x - sinYaw * this.distanceBehind,
-      kart.position.y + this.heightAbove,
-      kart.position.z - cosYaw * this.distanceBehind
-    );
-
-    // Look ahead target: slightly ahead of the kart in facing direction
-    const desiredLookTarget = new Vector3(
-      kart.position.x + sinYaw * this.lookAheadOffset,
+    // Smoothly follow the kart's position
+    const targetLook = new Vector3(
+      kart.position.x,
       kart.position.y + 0.9,
-      kart.position.z + cosYaw * this.lookAheadOffset
+      kart.position.z
     );
+    this.chaseCamera.target = Vector3.Lerp(this.chaseCamera.target, targetLook, 1.0 - Math.exp(-this.rotationLerpSpeed * dt));
 
-    // Smooth interpolation (Lerp)
-    const posLerpFactor = 1.0 - Math.exp(-this.positionLerpSpeed * dt);
-    const targetLerpFactor = 1.0 - Math.exp(-this.rotationLerpSpeed * dt);
+    // Auto-Return to default behind-car perspective if not free-looking
+    if (!this.isFreeLooking) {
+      this.freeLookTimer += dt;
+      if (this.freeLookTimer > 0.4) { // Delay before snapping back
+        let targetAlpha = -kart.yaw - Math.PI / 2;
+        let targetBeta = Math.PI / 3.2;
 
-    this.currentCameraPos = Vector3.Lerp(this.currentCameraPos, desiredPos, posLerpFactor);
-    this.currentLookTarget = Vector3.Lerp(this.currentLookTarget, desiredLookTarget, targetLerpFactor);
+        // Normalize alpha to find shortest rotation path
+        let currentAlpha = this.chaseCamera.alpha;
+        while (currentAlpha - targetAlpha > Math.PI) targetAlpha += Math.PI * 2;
+        while (targetAlpha - currentAlpha > Math.PI) targetAlpha -= Math.PI * 2;
 
-    this.chaseCamera.position.copyFrom(this.currentCameraPos);
-    this.chaseCamera.setTarget(this.currentLookTarget);
+        const lerpFactor = 1.0 - Math.exp(-this.rotationLerpSpeed * 0.25 * dt); // Smooth return speed
+        
+        this.chaseCamera.alpha += (targetAlpha - this.chaseCamera.alpha) * lerpFactor;
+        this.chaseCamera.beta += (targetBeta - this.chaseCamera.beta) * lerpFactor;
+        this.chaseCamera.radius += (this.distanceBehind - this.chaseCamera.radius) * lerpFactor;
+      }
+    }
 
     // Dynamic FOV speed effect
     const speedRatio = Math.min(Math.abs(kart.forwardSpeed) / (kart.tuning.maxForwardSpeed * kart.tuning.boostMultiplier), 1.0);
