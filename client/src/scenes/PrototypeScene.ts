@@ -129,6 +129,14 @@ export class PrototypeScene {
     this.scene.collisionsEnabled = true;
     this.scene.gravity = new Vector3(0, -9.81, 0);
 
+    // 1.5 Create Permanent Invisible Collision Floor
+    // This ensures cars NEVER fall into the abyss while the detailed 3D arena is loading in the background
+    const collisionFloor = MeshBuilder.CreateGround("CollisionFloor", { width: 80000, height: 80000 }, this.scene);
+    collisionFloor.position.y = 0.0; // Match the exact ground level of the 3D model
+    collisionFloor.isVisible = false; // Completely invisible
+    collisionFloor.checkCollisions = true; // Fully solid for physics
+    collisionFloor.receiveShadows = false;
+
     // A. Skybox Sphere with Crimson Cyber Nebula & Spire Skyline
     const skyDome = MeshBuilder.CreateSphere(
       "StadiumSkyDome",
@@ -207,7 +215,7 @@ export class PrototypeScene {
   }
 
   public getFloorHeight(x: number, z: number): number {
-    if (!this.arenaLoaded) return 100.0;
+    if (!this.arenaLoaded) return 0.0;
     
     // Drop a ray from way up high straight down to find the solid floor
     const ray = new BABYLON.Ray(new Vector3(x, 10000.0, z), new Vector3(0, -1, 0), 20000.0);
@@ -215,7 +223,7 @@ export class PrototypeScene {
     if (hit && hit.hit && hit.pickedPoint) {
       return hit.pickedPoint.y;
     }
-    return 100.0; // Fallback
+    return 0.0; // Fallback
   }
 
   public update(deltaTime: number, inputManager: InputManager, isFrozen: boolean = false): void {
@@ -232,11 +240,6 @@ export class PrototypeScene {
     // Toggle Camera mode if C was pressed
     if (input.toggleCamera) {
       this.cameraController.toggleMode();
-    }
-
-    if (!this.arenaLoaded) {
-      // Do not update kart physics/movement until the arena is fully loaded
-      return;
     }
 
     // Update Kart Driving Physics & Visuals
