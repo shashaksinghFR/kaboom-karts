@@ -255,8 +255,12 @@ export class RemoteKartVisual {
   }
 
   private async tryImportMesh(url: string): Promise<void> {
-    // Correct BabylonJS syntax: rootUrl is empty, sceneFilename is the full absolute path
-    const result = await SceneLoader.ImportMeshAsync("", "", url, this.scene);
+    // Split the URL to help BabylonJS auto-detect the .glb extension properly
+    const lastSlashIndex = url.lastIndexOf("/");
+    const rootUrl = lastSlashIndex !== -1 ? url.substring(0, lastSlashIndex + 1) : "";
+    const fileName = lastSlashIndex !== -1 ? url.substring(lastSlashIndex + 1) : url;
+
+    const result = await SceneLoader.ImportMeshAsync("", rootUrl, fileName, this.scene);
 
     this.meshes.forEach((m) => m.dispose());
     this.meshes = result.meshes;
@@ -314,6 +318,11 @@ export class RemoteKartVisual {
         min = Vector3.Minimize(min, bounds.minimumWorld);
         max = Vector3.Maximize(max, bounds.maximumWorld);
       }
+    }
+
+    if (min.x === Number.MAX_VALUE) {
+      min = new Vector3(-0.5, 0, -1.0);
+      max = new Vector3(0.5, 1.0, 1.0);
     }
 
     const size = max.subtract(min);

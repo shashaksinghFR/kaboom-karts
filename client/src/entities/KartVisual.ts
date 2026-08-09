@@ -151,8 +151,12 @@ export class KartVisual implements IKartVisual {
 
   public async loadModel(modelUrl: string = "/models/kart1.glb"): Promise<void> {
     try {
-      // Correct BabylonJS syntax: rootUrl is empty, sceneFilename is the full absolute path
-      const result = await SceneLoader.ImportMeshAsync("", "", modelUrl, this.scene);
+      // Split the URL to help BabylonJS auto-detect the .glb extension properly
+      const lastSlashIndex = modelUrl.lastIndexOf("/");
+      const rootUrl = lastSlashIndex !== -1 ? modelUrl.substring(0, lastSlashIndex + 1) : "";
+      const fileName = lastSlashIndex !== -1 ? modelUrl.substring(lastSlashIndex + 1) : modelUrl;
+
+      const result = await SceneLoader.ImportMeshAsync("", rootUrl, fileName, this.scene);
 
       // Clean up previously loaded meshes
       this.meshes.forEach((m) => m.dispose());
@@ -240,6 +244,12 @@ export class KartVisual implements IKartVisual {
         min = Vector3.Minimize(min, bounds.minimumWorld);
         max = Vector3.Maximize(max, bounds.maximumWorld);
       }
+    }
+
+    // Safety fallback if no valid meshes were found to prevent NaN corruption
+    if (min.x === Number.MAX_VALUE) {
+      min = new Vector3(-0.5, 0, -1.0);
+      max = new Vector3(0.5, 1.0, 1.0);
     }
 
     const size = max.subtract(min);
