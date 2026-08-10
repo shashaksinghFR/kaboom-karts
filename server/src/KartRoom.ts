@@ -283,20 +283,20 @@ export class KartRoom extends Room<KartRoomState> {
       player.colorIndex = slotIndex;
     }
 
-    // Calculate initial spawn position
+    // Calculate initial spawn position (Moved outwards to avoid center ramps)
     if (this.state.gameMode === "team") {
       const isBlue = slotIndex < 5;
       const teamIdx = isBlue ? slotIndex : slotIndex - 5;
-      const zPos = (teamIdx - 2) * 8;
-      player.x = isBlue ? -35 : 35;
+      const zPos = (teamIdx - 2) * 20;
+      player.x = isBlue ? -150 : 150;
       player.y = 0.5;
       player.z = zPos;
       player.yaw = isBlue ? Math.PI / 2 : -Math.PI / 2;
     } else {
       const angle = (slotIndex / this.maxClients) * Math.PI * 2;
-      player.x = Math.sin(angle) * 22;
+      player.x = Math.sin(angle) * 150;
       player.y = 0.5;
-      player.z = Math.cos(angle) * 22;
+      player.z = Math.cos(angle) * 150;
       player.yaw = angle + Math.PI;
     }
 

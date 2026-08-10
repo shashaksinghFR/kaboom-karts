@@ -19,10 +19,10 @@ export class CameraController {
   private chaseCamera: ArcRotateCamera;
   private currentMode: CameraMode = CameraMode.CHASE;
 
-  // Fixed camera distance and height
-  public distanceBehind: number = 8.0;   // Brought closer
-  public heightAbove: number = 3.0;      // Lowered slightly
-  public lookAheadOffset: number = 3.2; 
+  // Fixed camera distance and height (adjusted to be closer and lower to ground for better sense of speed)
+  public distanceBehind: number = 5.0;
+  public heightAbove: number = 1.5;
+  public lookAheadOffset: number = 2.0; 
   public rotationLerpSpeed: number = 14.0;
 
   private isFreeLooking: boolean = false;
@@ -62,8 +62,8 @@ export class CameraController {
       Vector3.Zero(),
       this.scene
     );
-    this.chaseCamera.fov = 0.85; // Slightly narrower FOV for a cinematic look from distance
-    this.chaseCamera.minZ = 2.0; // Avoid z-fighting
+    this.chaseCamera.fov = 1.0; // Slightly wider FOV for a better sense of speed
+    this.chaseCamera.minZ = 0.1; // Avoid z-fighting
     this.chaseCamera.maxZ = 80000;
     this.chaseCamera.lowerRadiusLimit = this.distanceBehind; // Lock distance exactly
     this.chaseCamera.upperRadiusLimit = this.distanceBehind; 
@@ -88,6 +88,9 @@ export class CameraController {
       if (evt.pointerType === "mouse" && evt.buttons !== 1 && pi.type !== 2) return;
 
       if (pi.type === 1) { // POINTERDOWN
+        // Ignore touches on the left side of the screen on mobile to prevent the joystick from hijacking the camera
+        if (evt.pointerType === "touch" && clientX < window.innerWidth / 2) return;
+
         // Only grab free-look if we aren't already free-looking with another pointer
         if (!this.isFreeLooking) {
           this.isFreeLooking = true;

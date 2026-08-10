@@ -130,6 +130,14 @@ export class PrototypeScene {
     this.scene.collisionsEnabled = true;
     this.scene.gravity = new Vector3(0, -9.81, 0);
 
+    // Add intense Neon Glow Post-Processing
+    import("@babylonjs/core").then(({ GlowLayer }) => {
+      const gl = new GlowLayer("neon-glow", this.scene, {
+        mainTextureSamples: 4
+      });
+      gl.intensity = 1.25; // Pop emissive lights like neon signs/thrusters
+    });
+
     // A. Skybox Sphere with Crimson Cyber Nebula & Spire Skyline
     const skyDome = MeshBuilder.CreateSphere(
       "StadiumSkyDome",
@@ -191,8 +199,8 @@ export class PrototypeScene {
            this.arenaRoot = rootNode;
 
            // The user requested the arena to be massive ("like a player in a football field").
-           // We scale it up substantially.
-           const ARENA_SCALE = 50.0;
+           // We scale it up substantially (reduced 15% from 50x per user request).
+           const ARENA_SCALE = 42.5;
            rootNode.scaling.scaleInPlace(ARENA_SCALE);
 
            // Ensure transformations are applied to children for correct physics collisions

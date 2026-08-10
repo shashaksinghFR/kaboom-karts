@@ -159,16 +159,7 @@ export class Missile {
       return;
     }
 
-    // 2. Arena Outer Wall Collision Check
-    const distSq =
-      this.rootNode.position.x * this.rootNode.position.x +
-      this.rootNode.position.z * this.rootNode.position.z;
-
-    if (distSq >= this.arenaRadius * this.arenaRadius) {
-      onExplode(this.rootNode.position.clone());
-      this.destroy();
-      return;
-    }
+    // (Removed artificial arena radius boundary check since we use massive custom 3D models now)
   }
 
   public destroy(): void {
