@@ -283,22 +283,23 @@ export class KartRoom extends Room<KartRoomState> {
       player.colorIndex = slotIndex;
     }
 
-    // Calculate initial spawn position (Staggered grid to avoid center ramps)
+    // Calculate initial spawn position (Opposite ends of the arena like football goalposts)
+    const isSideA = slotIndex % 2 === 0;
+    const sideIdx = Math.floor(slotIndex / 2); // 0, 1, 2, 3, 4 per side
+
     if (this.state.gameMode === "team") {
       const isBlue = slotIndex < 5;
       const teamIdx = isBlue ? slotIndex : slotIndex - 5;
       player.x = (teamIdx - 2) * 12; // Spread horizontally (-24 to +24)
       player.y = 0.5;
-      player.z = isBlue ? -60 : 60; // Spread vertically from center
+      player.z = isBlue ? -120 : 120; // Opposite ends
       player.yaw = isBlue ? 0 : Math.PI; // Face the center
     } else {
-      // FFA: staggered grid all facing same direction
-      const row = Math.floor(slotIndex / 3);
-      const col = slotIndex % 3;
-      player.x = (col - 1) * 15; // -15, 0, 15
+      // FFA: Half on one end, half on the other end, facing center
+      player.x = (sideIdx - 2) * 15; // Spread horizontally
       player.y = 0.5;
-      player.z = -40 - (row * 15); // -40, -55, -70, -85
-      player.yaw = 0; // All facing forward
+      player.z = isSideA ? -120 : 120;
+      player.yaw = isSideA ? 0 : Math.PI; // Face the center
     }
 
     this.state.players.set(client.sessionId, player);
@@ -344,21 +345,22 @@ export class KartRoom extends Room<KartRoomState> {
     this.state.players.forEach((p) => {
       p.health = 100;
       p.eliminated = false;
+      const isSideA = p.slotIndex % 2 === 0;
+      const sideIdx = Math.floor(p.slotIndex / 2);
+
       if (this.state.gameMode === "team") {
         const isBlue = p.slotIndex < 5;
         const teamIdx = isBlue ? p.slotIndex : p.slotIndex - 5;
         p.x = (teamIdx - 2) * 12; // Spread horizontally (-24 to +24)
         p.y = 0.5;
-        p.z = isBlue ? -60 : 60; // Spread vertically from center
+        p.z = isBlue ? -120 : 120; // Opposite ends
         p.yaw = isBlue ? 0 : Math.PI; // Face the center
       } else {
-        // FFA: staggered grid all facing same direction
-        const row = Math.floor(p.slotIndex / 3);
-        const col = p.slotIndex % 3;
-        p.x = (col - 1) * 15; // -15, 0, 15
+        // FFA: Half on one end, half on the other end, facing center
+        p.x = (sideIdx - 2) * 15; // Spread horizontally
         p.y = 0.5;
-        p.z = -40 - (row * 15); // -40, -55, -70, -85
-        p.yaw = 0; // All facing forward
+        p.z = isSideA ? -120 : 120;
+        p.yaw = isSideA ? 0 : Math.PI; // Face the center
       }
     });
 
