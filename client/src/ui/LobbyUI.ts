@@ -273,8 +273,16 @@ export class LobbyUI {
   }
 
   private setupListeners(): void {
-    this.homeFullscreenBtn?.addEventListener("click", () => this.toggleFullscreen());
-    this.hudFullscreenBtn?.addEventListener("click", () => this.toggleFullscreen());
+    const onFullscreen = (e: Event) => {
+      e.preventDefault();
+      this.toggleFullscreen();
+    };
+    
+    this.homeFullscreenBtn?.addEventListener("click", onFullscreen);
+    this.homeFullscreenBtn?.addEventListener("touchstart", onFullscreen, { passive: false });
+    
+    this.hudFullscreenBtn?.addEventListener("click", onFullscreen);
+    this.hudFullscreenBtn?.addEventListener("touchstart", onFullscreen, { passive: false });
 
     this.btnModeFfa?.addEventListener("click", () => {
       if (this.isHost) {

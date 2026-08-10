@@ -151,6 +151,8 @@ export class InputManager {
 
       window.addEventListener("touchmove", (e) => {
         if (touchId === null) return;
+        // Prevent default browser behavior (like scrolling) while dragging joystick
+        e.preventDefault(); 
         for (let i = 0; i < e.changedTouches.length; i++) {
           const touch = e.changedTouches[i];
           if (touch.identifier === touchId) {

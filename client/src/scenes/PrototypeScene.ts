@@ -192,7 +192,7 @@ export class PrototypeScene {
 
            // The user requested the arena to be massive ("like a player in a football field").
            // We scale it up substantially.
-           const ARENA_SCALE = 100.0;
+           const ARENA_SCALE = 50.0;
            rootNode.scaling.scaleInPlace(ARENA_SCALE);
 
            // Ensure transformations are applied to children for correct physics collisions
