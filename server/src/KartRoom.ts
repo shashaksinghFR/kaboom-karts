@@ -283,21 +283,22 @@ export class KartRoom extends Room<KartRoomState> {
       player.colorIndex = slotIndex;
     }
 
-    // Calculate initial spawn position (Moved outwards to avoid center ramps)
+    // Calculate initial spawn position (Staggered grid to avoid center ramps)
     if (this.state.gameMode === "team") {
       const isBlue = slotIndex < 5;
       const teamIdx = isBlue ? slotIndex : slotIndex - 5;
-      const zPos = (teamIdx - 2) * 20;
-      player.x = isBlue ? -150 : 150;
+      player.x = (teamIdx - 2) * 12; // Spread horizontally (-24 to +24)
       player.y = 0.5;
-      player.z = zPos;
-      player.yaw = isBlue ? Math.PI / 2 : -Math.PI / 2;
+      player.z = isBlue ? -60 : 60; // Spread vertically from center
+      player.yaw = isBlue ? 0 : Math.PI; // Face the center
     } else {
-      const angle = (slotIndex / this.maxClients) * Math.PI * 2;
-      player.x = Math.sin(angle) * 150;
+      // FFA: staggered grid all facing same direction
+      const row = Math.floor(slotIndex / 3);
+      const col = slotIndex % 3;
+      player.x = (col - 1) * 15; // -15, 0, 15
       player.y = 0.5;
-      player.z = Math.cos(angle) * 150;
-      player.yaw = angle + Math.PI;
+      player.z = -40 - (row * 15); // -40, -55, -70, -85
+      player.yaw = 0; // All facing forward
     }
 
     this.state.players.set(client.sessionId, player);

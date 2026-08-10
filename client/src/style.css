@@ -1449,7 +1449,7 @@ html, body {
 .touch-layer {
   position: absolute;
   inset: 0;
-  pointer-events: auto;
+  pointer-events: none; /* Let touches pass through to the 3D canvas for camera swipe */
   z-index: 60;
   display: flex;
   align-items: flex-end;
@@ -1462,6 +1462,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  pointer-events: auto; /* Re-enable pointer events for the joystick specifically */
 }
 
 .joystick-base {
@@ -1499,7 +1500,8 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 12px;
+  gap: 16px;
+  pointer-events: auto; /* Re-enable pointer events for the action buttons */
 }
 
 .touch-secondary-row {

@@ -189,19 +189,26 @@ export class PrototypeScene {
         console.log(`🏟️ Battle Arena 2 loaded successfully (${result.meshes.length} meshes)`);
         
         result.meshes.forEach((mesh) => {
-          // Enable collisions and shadows for all arena meshes
-          mesh.checkCollisions = true;
-          mesh.receiveShadows = true;
-        });
+           // Enable collisions and shadows for all arena meshes
+           mesh.checkCollisions = true;
+           mesh.receiveShadows = true;
 
-        if (result.meshes.length > 0) {
-           const rootNode = result.meshes[0];
-           this.arenaRoot = rootNode;
+           // Strip emissive properties so the arena doesn't glow under the GlowLayer
+           if (mesh.material) {
+             const mat = mesh.material as any;
+             if (mat.emissiveColor) mat.emissiveColor = new BABYLON.Color3(0, 0, 0);
+             if (mat.emissiveTexture) mat.emissiveTexture = null;
+           }
+         });
 
-           // The user requested the arena to be massive ("like a player in a football field").
-           // We scale it up substantially (reduced 15% from 50x per user request).
-           const ARENA_SCALE = 42.5;
-           rootNode.scaling.scaleInPlace(ARENA_SCALE);
+         if (result.meshes.length > 0) {
+            const rootNode = result.meshes[0];
+            this.arenaRoot = rootNode;
+
+            // The user requested the arena to be massive but not too big
+            // Reduced to 17.5 scale as requested
+            const ARENA_SCALE = 17.5;
+            rootNode.scaling.scaleInPlace(ARENA_SCALE);
 
            // Ensure transformations are applied to children for correct physics collisions
            result.meshes.forEach(m => m.computeWorldMatrix(true));
