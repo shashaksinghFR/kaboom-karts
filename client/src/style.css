@@ -3,36 +3,36 @@
    ========================================================================== */
 
 :root {
-  /* Curated Cyberpunk Palette */
-  --bg-space: #050811;
-  --bg-card: rgba(10, 15, 30, 0.85);
-  --bg-surface-glass: rgba(12, 18, 36, 0.75);
+  /* Minimalist AAA Game Palette */
+  --bg-space: #0f1015;
+  --bg-card: rgba(30, 32, 40, 0.4);
+  --bg-surface-glass: rgba(20, 22, 28, 0.6);
   --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-neon-cyan: rgba(0, 240, 255, 0.4);
-  --border-neon-pink: rgba(255, 0, 127, 0.4);
+  --border-neon-cyan: rgba(255, 255, 255, 0.2);
+  --border-neon-pink: rgba(255, 255, 255, 0.2);
 
-  /* Primary Neon Accents */
-  --accent-cyan: #00f0ff;
-  --accent-magenta: #ff007f;
-  --accent-gold: #ffc700;
-  --accent-green: #00ff88;
-  --accent-red: #ff3355;
-  --accent-purple: #bf00ff;
+  /* Clean Solid Accents */
+  --accent-cyan: #ffffff;
+  --accent-magenta: #ffffff;
+  --accent-gold: #ffffff;
+  --accent-green: #2ecc71;
+  --accent-red: #e74c3c;
+  --accent-purple: #ffffff;
 
   /* Typography */
-  --text-primary: #ffffff;
+  --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
 
   --font-main: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  /* Atmospheric Glows */
-  --glow-cyan: 0 0 25px rgba(0, 240, 255, 0.45);
-  --glow-magenta: 0 0 25px rgba(255, 0, 127, 0.45);
-  --glow-gold: 0 0 25px rgba(255, 199, 0, 0.45);
-  --glow-green: 0 0 25px rgba(0, 255, 136, 0.45);
-  --glow-red: 0 0 25px rgba(255, 51, 85, 0.45);
+  /* Soft Shadows (Replacing Neon Glows) */
+  --glow-cyan: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --glow-magenta: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --glow-gold: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --glow-green: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --glow-red: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
 /* Reset & Viewport Lock */
@@ -378,14 +378,14 @@ html, body {
   width: 100%;
   max-width: 420px;
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-neon-cyan);
-  border-radius: 18px;
-  padding: 28px;
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 32px;
   box-shadow: var(--glow-cyan);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .card-header {
@@ -466,14 +466,15 @@ html, body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-cyan), #00a8ff);
-  color: #040814;
-  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.35);
+  background: #ffffff;
+  color: #0f1015;
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(0, 240, 255, 0.55);
+  background: #f1f5f9;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
 }
 
 .btn-primary:disabled {
@@ -650,16 +651,16 @@ html, body {
 
 .mode-toggle-btn.active {
   background: var(--accent-cyan);
-  color: #040814;
+  color: #0f1015;
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
 .mode-toggle-btn.team-active {
-  background: linear-gradient(90deg, #00f0ff, #ff2a2a);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 12px rgba(255, 42, 42, 0.4);
+  background: #ffffff;
+  color: #0f1015;
+  border-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
 .room-code-badge {
@@ -700,8 +701,8 @@ html, body {
 }
 
 .btn-copy:hover {
-  background: var(--accent-cyan);
-  color: #040814;
+  background: var(--text-primary);
+  color: #0f1015;
 }
 
 /* ==========================================================================
@@ -797,8 +798,7 @@ html, body {
 
 .kart-card.selected {
   border-color: var(--kart-accent, var(--accent-cyan));
-  box-shadow: 0 0 16px var(--kart-accent, var(--accent-cyan));
-  background: rgba(18, 28, 54, 0.95);
+  background: rgba(40, 45, 60, 0.95);
 }
 
 .kart-card.taken {
@@ -833,7 +833,6 @@ html, body {
   height: 8px;
   border-radius: 50%;
   background: var(--kart-accent, var(--accent-cyan));
-  box-shadow: 0 0 8px var(--kart-accent, var(--accent-cyan));
 }
 
 .kart-visual-preview {
@@ -935,9 +934,9 @@ html, body {
 }
 
 .btn-lock-kart.locked {
-  background: var(--kart-accent, var(--accent-cyan));
-  color: #040814;
-  border-color: var(--kart-accent, var(--accent-cyan));
+  background: var(--text-primary);
+  color: #0f1015;
+  border-color: var(--text-primary);
   font-weight: 900;
 }
 
@@ -983,9 +982,9 @@ html, body {
 }
 
 .team-blue-tag {
-  color: #00f0ff;
-  background: rgba(0, 240, 255, 0.12);
-  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -996,9 +995,9 @@ html, body {
 }
 
 .team-red-tag {
-  color: #ff2a2a;
-  background: rgba(255, 42, 42, 0.12);
-  border: 1px solid rgba(255, 42, 42, 0.4);
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
   padding: 2px 8px;
   border-radius: 4px;
 }

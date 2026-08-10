@@ -8,6 +8,7 @@ import {
   TransformNode,
   TrailMesh,
   PointLight,
+  Ray,
 } from "@babylonjs/core";
 import { SCENE_CONFIG } from "../config/constants";
 
@@ -147,6 +148,17 @@ export class Missile {
     if (this.isDead) return;
 
     this.age += deltaTime;
+
+    // Raycast forward to check for collision with environment meshes (like arena walls)
+    const ray = new Ray(this.rootNode.position, this.velocity.normalizeToNew(), this.speed * deltaTime);
+    // Ignore other missiles and karts for environment collision (kart collisions are handled in PrototypeScene)
+    const hitInfo = this.scene.pickWithRay(ray, (mesh) => mesh.checkCollisions && mesh.name !== "MissileBody");
+    
+    if (hitInfo && hitInfo.hit) {
+      onExplode(hitInfo.pickedPoint || this.rootNode.position.clone());
+      this.destroy();
+      return;
+    }
 
     // Linear translation along velocity vector
     this.rootNode.position.x += this.velocity.x * deltaTime;
