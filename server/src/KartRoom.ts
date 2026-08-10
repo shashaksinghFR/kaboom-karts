@@ -347,17 +347,18 @@ export class KartRoom extends Room<KartRoomState> {
       if (this.state.gameMode === "team") {
         const isBlue = p.slotIndex < 5;
         const teamIdx = isBlue ? p.slotIndex : p.slotIndex - 5;
-        const zPos = (teamIdx - 2) * 8;
-        p.x = isBlue ? -35 : 35;
+        p.x = (teamIdx - 2) * 12; // Spread horizontally (-24 to +24)
         p.y = 0.5;
-        p.z = zPos;
-        p.yaw = isBlue ? Math.PI / 2 : -Math.PI / 2; // Blue faces East (+X), Red faces West (-X)
+        p.z = isBlue ? -60 : 60; // Spread vertically from center
+        p.yaw = isBlue ? 0 : Math.PI; // Face the center
       } else {
-        const angle = (p.slotIndex / this.maxClients) * Math.PI * 2;
-        p.x = Math.sin(angle) * 22;
+        // FFA: staggered grid all facing same direction
+        const row = Math.floor(p.slotIndex / 3);
+        const col = p.slotIndex % 3;
+        p.x = (col - 1) * 15; // -15, 0, 15
         p.y = 0.5;
-        p.z = Math.cos(angle) * 22;
-        p.yaw = angle + Math.PI;
+        p.z = -40 - (row * 15); // -40, -55, -70, -85
+        p.yaw = 0; // All facing forward
       }
     });
 

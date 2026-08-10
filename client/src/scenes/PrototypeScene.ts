@@ -133,7 +133,9 @@ export class PrototypeScene {
     // Add intense Neon Glow Post-Processing
     import("@babylonjs/core").then(({ GlowLayer }) => {
       const gl = new GlowLayer("neon-glow", this.scene, {
-        mainTextureSamples: 4
+        mainTextureFixedSize: 512, // Lower resolution for better performance
+        blurKernelSize: 32,
+        mainTextureSamples: 1 // No MSAA on glow to fix lag
       });
       gl.intensity = 1.25; // Pop emissive lights like neon signs/thrusters
     });
@@ -189,9 +191,9 @@ export class PrototypeScene {
         console.log(`🏟️ Battle Arena 2 loaded successfully (${result.meshes.length} meshes)`);
         
         result.meshes.forEach((mesh) => {
-           // Enable collisions and shadows for all arena meshes
+           // Enable collisions for all arena meshes, but disable shadows for massive performance boost
            mesh.checkCollisions = true;
-           mesh.receiveShadows = true;
+           mesh.receiveShadows = false; // Fixes lag
 
            // Strip emissive properties so the arena doesn't glow under the GlowLayer
            if (mesh.material) {
@@ -206,8 +208,8 @@ export class PrototypeScene {
             this.arenaRoot = rootNode;
 
             // The user requested the arena to be massive but not too big
-            // Reduced to 17.5 scale as requested
-            const ARENA_SCALE = 17.5;
+            // Reduced to 15.75 scale as requested (reduced by 10%)
+            const ARENA_SCALE = 15.75;
             rootNode.scaling.scaleInPlace(ARENA_SCALE);
 
            // Ensure transformations are applied to children for correct physics collisions
@@ -304,7 +306,7 @@ export class PrototypeScene {
         y: spawnPos.y,
         z: spawnPos.z,
         yaw: forwardHeading,
-        speed: 55,
+        speed: this.weaponSystem.missileSpeed,
       });
     }
 

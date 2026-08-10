@@ -185,7 +185,6 @@ export class RemoteKartVisual {
 
     const mat = new StandardMaterial("NameplateMat", this.scene);
     mat.diffuseTexture = this.nameplateTexture;
-    mat.emissiveColor = new Color3(1, 1, 1);
     mat.disableLighting = true;
     mat.backFaceCulling = false;
     mat.useAlphaFromDiffuseTexture = true;

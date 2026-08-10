@@ -169,7 +169,7 @@ export class CameraController {
     // Auto-Return to default behind-car perspective if not free-looking
     if (!this.isFreeLooking) {
       this.freeLookTimer += dt;
-      if (this.freeLookTimer > 0.4) { // Delay before snapping back
+      if (this.freeLookTimer > 1.0) { // Wait 1 second before snapping back
         let targetAlpha = -kart.yaw - Math.PI / 2;
         let targetBeta = Math.PI / 3.4; // Elevated angle
 

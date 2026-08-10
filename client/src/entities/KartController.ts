@@ -25,7 +25,7 @@ export const DEFAULT_KART_TUNING: KartTuning = {
   acceleration: 30.0,          // Responsive, smooth acceleration
   deceleration: 14.0,          // Natural rolling friction
   braking: 45.0,               // High-response braking
-  turnRate: 2.65,              // Agile steering
+  turnRate: 1.7,               // Reduced sensitivity as requested
   steeringSmoothing: 12.0,     // Direct zero-lag steering response
   driftTurnMultiplier: 1.60,   // Power-slide rotation
   lateralFriction: 0.86,       // Solid high-speed asphalt grip
