@@ -215,19 +215,14 @@ export class PrototypeScene {
            // Ensure transformations are applied to children for correct physics collisions
            result.meshes.forEach(m => m.computeWorldMatrix(true));
 
-           // Auto-align the arena so it is perfectly centered horizontally at (0,0)
-           // This guarantees the raycast dropped at (0,0) will hit the drivable surface!
-           const boundingInfo = rootNode.getHierarchyBoundingVectors();
-           const center = boundingInfo.min.add(boundingInfo.max).scale(0.5);
-
-           rootNode.position.x -= center.x;
-           rootNode.position.z -= center.z;
-           // We DO NOT drop the arena's lowest point to Y=0 because this model
-           // has a massive sky sphere. If we drop min.y to 0, it pushes the
-           // actual ground miles into the air!
+           // We DO NOT auto-align the center because if the model has a large off-center background mesh,
+           // centering the bounding box will push the actual stadium far away from (0,0,0).
+           // We assume the artist centered the playable stadium at (0,0,0) in Blender.
+           rootNode.position.x = 0;
+           rootNode.position.z = 0;
            rootNode.position.y = 0;
 
-           console.log(`🏟️ Arena 2 scaled ${ARENA_SCALE}x, and centered X/Z. Shift: (${center.x.toFixed(2)}, ${center.z.toFixed(2)}).`);
+           console.log(`🏟️ Arena 2 scaled ${ARENA_SCALE}x at (0,0,0).`);
 
            // Recompute matrices after shift
            result.meshes.forEach(m => m.computeWorldMatrix(true));
