@@ -5,7 +5,6 @@ import { HudOverlay } from "./ui/HudOverlay";
 import { LobbyUI } from "./ui/LobbyUI";
 import { NetworkClient } from "./network/NetworkClient";
 import { soundManager } from "./audio/SoundManager";
-import { CustomControlsManager } from "./ui/CustomControlsManager";
 
 window.addEventListener("DOMContentLoaded", async () => {
   // Unlock Web Audio API & Start BGM on first user interaction
@@ -28,7 +27,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   const hud = new HudOverlay();
   const lobbyUI = new LobbyUI();
   const networkClient = new NetworkClient();
-  const customControls = new CustomControlsManager();
 
   // Create the 3D Cyberpunk Grand Stadium Scene
   const prototypeScene = new PrototypeScene(engine);
@@ -75,16 +73,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   const syncControlUI = () => {
     const mode = inputManager.getControlMode();
     const isTouch = mode === "touch";
-    const editLayoutBtn = document.getElementById("edit-layout-btn");
-    
     if (homeControlText) {
       homeControlText.textContent = isTouch ? "PHONE JOYSTICK" : "PC KEYBOARD";
     }
     if (hudControlText) {
       hudControlText.textContent = isTouch ? "CONTROLS: TOUCH" : "CONTROLS: PC";
-    }
-    if (editLayoutBtn) {
-      editLayoutBtn.style.display = isTouch ? "flex" : "none";
     }
   };
 
@@ -99,26 +92,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     inputManager.toggleControlMode();
     syncControlUI();
   });
-
-  const btnHomeEditHud = document.getElementById("btn-home-edit-hud");
-  btnHomeEditHud?.addEventListener("click", () => {
-    // Force touch mode
-    if (inputManager.getControlMode() !== "touch") {
-      inputManager.toggleControlMode();
-      syncControlUI();
-    }
-    
-    // Show game view temporarily to allow editing HUD
-    lobbyUI.showScreen("game");
-    customControls.toggleEditMode();
-  });
-
-  // When exiting edit mode, return to home if we are in the lobby phase
-  customControls.onExitEditMode = () => {
-    if (currentPhase === "lobby") {
-      lobbyUI.showScreen("home");
-    }
-  };
 
   // 2. Connect Lobby UI Actions
   lobbyUI.onCreateRoomCallback = async (playerName) => {
