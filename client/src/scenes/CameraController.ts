@@ -20,7 +20,7 @@ export class CameraController {
   private currentMode: CameraMode = CameraMode.CHASE;
 
   // Fixed camera distance and height (adjusted to be closer and lower to ground for better sense of speed)
-  public distanceBehind: number = 4.2;
+  public distanceBehind: number = 5.0;
   public heightAbove: number = 1.1;
   public lookAheadOffset: number = 2.0;
   public rotationLerpSpeed: number = 14.0;
@@ -202,7 +202,7 @@ export class CameraController {
 
     const targetLook = new Vector3(
       kart.position.x,
-      kart.position.y + 0.6,
+      kart.position.y + 1.2,
       kart.position.z
     );
     this.chaseCamera.target = Vector3.Lerp(this.chaseCamera.target, targetLook, 1.0 - Math.exp(-this.rotationLerpSpeed * dt));
@@ -211,7 +211,7 @@ export class CameraController {
       this.freeLookTimer += dt;
       if (this.freeLookTimer > 1.0) {
         let targetAlpha = -kart.yaw - Math.PI / 2;
-        let targetBeta = Math.PI / 2.3;
+        let targetBeta = Math.PI / 2.5;
 
         let currentAlpha = this.chaseCamera.alpha;
         while (currentAlpha - targetAlpha > Math.PI) targetAlpha += Math.PI * 2;

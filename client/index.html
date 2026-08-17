@@ -26,112 +26,96 @@
         </button>
       </div>
 
-      <!-- VIEW 1: Clean Futuristic Landing Home Page -->
+      <!-- VIEW 1: Cinematic Main Menu -->
       <div id="home-view" class="overlay-screen active-screen">
         <div class="home-backdrop"></div>
         
-        <div class="home-container">
-          <!-- Top Navigation Brand -->
-          <nav class="home-nav">
-            <div class="brand-badge-large">
-              <span class="brand-dot"></span>
-              <span class="brand-title-large">KABOOM KARTS</span>
-              <span class="brand-tag">STADIUM</span>
-            </div>
-            
-            <div class="nav-right-cluster">
-              <button id="home-fullscreen-btn" class="control-badge-btn" title="Toggle Fullscreen">
-                <span class="control-dot" style="background: var(--accent-magenta);"></span>
-                <span id="home-fullscreen-text">FULLSCREEN</span>
-              </button>
-              <button id="audio-toggle-btn" class="control-badge-btn" title="Toggle Sound & Music">
-                <span class="audio-dot"></span>
-                <span id="audio-status-text">AUDIO: ON</span>
-              </button>
-              <button id="home-control-toggle" class="control-badge-btn" title="Switch Controls (Keyboard / Phone Joystick)">
-                <span class="control-dot"></span>
-                <span id="home-control-text">PC KEYBOARD</span>
-              </button>
-              <div class="badge-multiplayer">10-PLAYER ARENA</div>
-            </div>
-          </nav>
+        <div class="cinematic-menu-container">
+          <!-- Top Right Controls -->
+          <div class="top-right-controls">
+            <button id="home-fullscreen-btn" class="icon-btn" title="Fullscreen">🔲 FULLSCREEN</button>
+            <button id="audio-toggle-btn" class="icon-btn" title="Toggle Sound">🔊 AUDIO: ON</button>
+            <button id="btn-about" class="icon-btn highlight" title="About Game">ℹ️ ABOUT GAME</button>
+            <button id="home-control-toggle" class="icon-btn" title="Switch Controls">⌨️ PC KEYBOARD</button>
+          </div>
 
-          <!-- Main Hero Content -->
-          <main class="home-hero">
-            <div class="hero-left">
-              <h1 class="hero-heading">PURE SKILL.<br /><span class="hero-highlight">ONE WEAPON.</span><br />ZERO EXCUSES.</h1>
-              <p class="hero-description">
-                Experience high-octane 3D kart battle combat in the Cyberpunk Grand Stadium. Every racer is equipped with the exact same weapon: a precision plasma missile with a 3-second cooldown.
-              </p>
+          <div class="cinematic-content">
+            <div class="title-group">
+              <h1 class="mega-title">KABOOM <span class="neon-text">KARTS</span></h1>
+              <p class="tagline">PURE SKILL. ONE WEAPON. ZERO EXCUSES.</p>
+            </div>
 
-              <div class="feature-pills">
-                <div class="feature-pill">
-                  <span class="pill-tag">MODES</span>
-                  <span>Free-For-All & 5v5 Team</span>
-                </div>
-                <div class="feature-pill">
-                  <span class="pill-tag">VEHICLES</span>
-                  <span>10 Unique Karts</span>
-                </div>
-                <div class="feature-pill">
-                  <span class="pill-tag">CONTROLS</span>
-                  <span>PC + Mobile Joystick</span>
-                </div>
+            <div class="action-terminal">
+              <div class="input-group">
+                <input
+                  id="player-name-input"
+                  type="text"
+                  maxlength="16"
+                  placeholder="ENTER PILOT CALLSIGN"
+                  value="AeroRacer"
+                  autocomplete="off"
+                  class="mega-input"
+                />
               </div>
-            </div>
 
-            <!-- Center Action Card -->
-            <div class="hero-right">
-              <div class="action-card">
-                <div class="card-header">
-                  <h2 class="card-title">ENTER THE ARENA</h2>
-                  <p class="card-subtitle">Choose your pilot callsign to battle</p>
-                </div>
-
-                <div class="input-group">
-                  <label for="player-name-input" class="input-label">PILOT CALLSIGN</label>
+              <div class="play-actions">
+                <button id="btn-create-room" class="btn-mega-play">
+                  <span class="btn-glow"></span>
+                  START ENGINE (CREATE ROOM)
+                </button>
+                
+                <div class="join-terminal">
+                  <span class="join-label">OR JOIN EXISTING:</span>
                   <input
-                    id="player-name-input"
+                    id="room-code-input"
                     type="text"
-                    maxlength="16"
-                    placeholder="Enter pilot name..."
-                    value="AeroRacer"
+                    maxlength="6"
+                    placeholder="ROOM CODE"
                     autocomplete="off"
-                    class="futuristic-input"
+                    class="mega-input mini-input"
                   />
+                  <button id="btn-join-room" class="btn-mega-secondary">JOIN</button>
                 </div>
+              </div>
 
-                <div class="action-buttons">
-                  <button id="btn-create-room" class="btn-primary">
-                    <span>CREATE ROOM</span>
+              <!-- Toast / Error Message -->
+              <div id="home-error-msg" class="error-msg-banner" style="display: none;"></div>
+
+              <div class="hud-customizer">
+                 <button id="btn-home-edit-hud" class="btn-mega-ghost">
+                    ⚙️ CUSTOMIZE MOBILE HUD
                   </button>
-
-                  <div class="divider-wrap">
-                    <div class="divider-line"></div>
-                    <span class="divider-text">OR JOIN ROOM</span>
-                    <div class="divider-line"></div>
-                  </div>
-
-                  <div class="join-row">
-                    <input
-                      id="room-code-input"
-                      type="text"
-                      maxlength="6"
-                      placeholder="ROOM CODE"
-                      autocomplete="off"
-                      class="futuristic-input code-input"
-                    />
-                    <button id="btn-join-room" class="btn-secondary">
-                      <span>JOIN</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Toast / Error Message -->
-                <div id="home-error-msg" class="error-msg-banner" style="display: none;"></div>
               </div>
             </div>
-          </main>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 1.5: About Page -->
+      <div id="about-view" class="overlay-screen" style="display: none;">
+        <div class="about-backdrop"></div>
+        <div class="about-container">
+          <button id="btn-close-about" class="btn-close">BACK TO MENU</button>
+          
+          <h2 class="about-title">ABOUT KABOOM KARTS</h2>
+          <div class="about-content">
+            <section>
+              <h3>HOW TO PLAY</h3>
+              <p>Welcome to the Grand Cyberpunk Stadium! Navigate the arena, pick up speed, and eliminate your rivals.</p>
+              <ul>
+                <li><strong>PC Controls:</strong> Arrow Keys / WASD to drive. SPACE to drift. SHIFT to boost. C to toggle camera. F to fire your plasma missile.</li>
+                <li><strong>Mobile Controls:</strong> Use the left virtual joystick to steer and accelerate. Tap the right action cluster to drift, boost, and fire!</li>
+                <li><strong>Combat:</strong> Everyone has the exact same weapon - a precision plasma missile with a 3-second cooldown. Timing is everything!</li>
+              </ul>
+            </section>
+            
+            <section>
+              <h3>DEVELOPMENT</h3>
+              <p>Kaboom Karts was meticulously designed to deliver an unapologetically pure, skill-based arcade combat experience.</p>
+              <p><strong>Developed by:</strong> Kaboom Studios</p>
+              <p><strong>Version:</strong> v1.0.0 (Stadium Edition)</p>
+            </section>
+          </div>
         </div>
       </div>
 
@@ -278,6 +262,10 @@
               <span id="hud-control-text">CONTROLS: PC</span>
             </button>
 
+            <button id="edit-layout-btn" class="hud-btn" title="Edit Touch Layout" style="display: none;">
+              <span>EDIT LAYOUT</span>
+            </button>
+
             <button id="cam-toggle-btn" class="hud-btn" title="Toggle Camera View (Shortcut: C)">
               <span id="cam-mode-text">CHASE CAM</span>
             </button>
@@ -321,7 +309,7 @@
           </div>
 
           <!-- Right: Touch Action Buttons -->
-          <div class="touch-actions-cluster">
+          <div id="action-zone" class="touch-actions-cluster">
             <div class="touch-secondary-row">
               <button id="btn-touch-cam" class="btn-touch-circle btn-touch-small" title="Toggle Cam">
                 <span>CAM</span>

@@ -6,6 +6,7 @@ export class LobbyUI {
   private homeView: HTMLElement | null;
   private lobbyView: HTMLElement | null;
   private gameView: HTMLElement | null;
+  private aboutView: HTMLElement | null;
   private gameoverModal: HTMLElement | null;
   private countdownOverlay: HTMLElement | null;
   private countdownNumber: HTMLElement | null;
@@ -20,6 +21,8 @@ export class LobbyUI {
   private homeErrorMsg: HTMLElement | null;
   private homeFullscreenBtn: HTMLButtonElement | null;
   private hudFullscreenBtn: HTMLButtonElement | null;
+  private btnAbout: HTMLButtonElement | null;
+  private btnCloseAbout: HTMLButtonElement | null;
 
   // Lobby Screen Elements
   private displayRoomCode: HTMLElement | null;
@@ -73,6 +76,7 @@ export class LobbyUI {
     this.homeView = document.getElementById("home-view");
     this.lobbyView = document.getElementById("lobby-view");
     this.gameView = document.getElementById("ui-overlay");
+    this.aboutView = document.getElementById("about-view");
     this.gameoverModal = document.getElementById("gameover-modal");
     this.countdownOverlay = document.getElementById("countdown-overlay");
     this.countdownNumber = document.getElementById("countdown-number");
@@ -86,6 +90,8 @@ export class LobbyUI {
     this.homeErrorMsg = document.getElementById("home-error-msg");
     this.homeFullscreenBtn = document.getElementById("home-fullscreen-btn") as HTMLButtonElement;
     this.hudFullscreenBtn = document.getElementById("hud-fullscreen-toggle") as HTMLButtonElement;
+    this.btnAbout = document.getElementById("btn-about") as HTMLButtonElement;
+    this.btnCloseAbout = document.getElementById("btn-close-about") as HTMLButtonElement;
 
     this.displayRoomCode = document.getElementById("display-room-code");
     this.playerCountChip = document.getElementById("player-count-chip");
@@ -281,8 +287,18 @@ export class LobbyUI {
     this.homeFullscreenBtn?.addEventListener("click", onFullscreen);
     this.homeFullscreenBtn?.addEventListener("touchstart", onFullscreen, { passive: false });
     
+    this.homeFullscreenBtn?.addEventListener("touchstart", onFullscreen, { passive: false });
+    
     this.hudFullscreenBtn?.addEventListener("click", onFullscreen);
     this.hudFullscreenBtn?.addEventListener("touchstart", onFullscreen, { passive: false });
+
+    this.btnAbout?.addEventListener("click", () => {
+      this.showScreen("about");
+    });
+
+    this.btnCloseAbout?.addEventListener("click", () => {
+      this.showScreen("home");
+    });
 
     this.btnModeFfa?.addEventListener("click", () => {
       if (this.isHost) {
@@ -370,11 +386,12 @@ export class LobbyUI {
     return raw || `Pilot_${Math.floor(100 + Math.random() * 900)}`;
   }
 
-  public showScreen(screen: "home" | "lobby" | "game" | "gameover"): void {
+  public showScreen(screen: "home" | "lobby" | "game" | "gameover" | "about"): void {
     if (this.homeView) this.homeView.style.display = screen === "home" ? "flex" : "none";
     if (this.lobbyView) this.lobbyView.style.display = screen === "lobby" ? "flex" : "none";
     if (this.gameView) this.gameView.style.display = screen === "game" ? "flex" : "none";
     if (this.gameoverModal) this.gameoverModal.style.display = screen === "gameover" ? "flex" : "none";
+    if (this.aboutView) this.aboutView.style.display = screen === "about" ? "flex" : "none";
 
     if (screen !== "game") {
       this.hideCountdown();
