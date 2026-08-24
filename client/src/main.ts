@@ -249,13 +249,10 @@ window.addEventListener("DOMContentLoaded", async () => {
       // Local player was shot down - immediately hide car & trigger explosion!
       prototypeScene.kartVisual.setVisible(false);
       prototypeScene.weaponSystem.spawnExplosion(prototypeScene.kartController.position.clone());
-      hud.showShotDownModal(data.killerName || "Rival Racer");
       
-      // Instantly return to room (home) after a 1.5s explosion delay
-      setTimeout(() => {
-        networkClient.leaveRoom();
-        lobbyUI.showScreen("home");
-      }, 1500);
+      // Instantly return to room (home)
+      networkClient.leaveRoom();
+      lobbyUI.showScreen("home");
     } else {
       // Instantly hide the enemy car on our screen
       prototypeScene.remoteKartManager.hideKart(data.eliminatedId);
