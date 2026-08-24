@@ -187,7 +187,7 @@ export class PrototypeScene {
 
     // B. Load Custom 3D Battle Arena Model
     import("@babylonjs/core").then(({ SceneLoader }) => {
-      SceneLoader.ImportMeshAsync("", "/models/", "lightarena.glb", this.scene).then((result) => {
+      SceneLoader.ImportMeshAsync("", "/models/", "battlearena2.glb", this.scene).then((result) => {
         console.log(`🏟️ Battle Arena 2 loaded successfully (${result.meshes.length} meshes)`);
         
         result.meshes.forEach((mesh) => {
