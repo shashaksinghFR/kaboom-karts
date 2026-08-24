@@ -656,8 +656,13 @@ export class LobbyUI {
     }
     this.lastScoreboardHash = scoreHash;
 
+    let playersArray = Array.from(playersMap.values()) as any[];
+    if (this.currentGameMode === "ffa") {
+      playersArray.sort((a, b) => b.score - a.score);
+    }
+
     let html = "";
-    playersMap.forEach?.((p: any) => {
+    playersArray.forEach((p: any) => {
       const isTeamMode = p.team === "blue" || p.team === "red";
       const colorDef = isTeamMode
         ? (p.team === "blue" ? { hex: "#00f0ff", name: "Blue" } : { hex: "#ff2a2a", name: "Red" })
@@ -665,6 +670,8 @@ export class LobbyUI {
 
       const isMe = p.id === localSessionId;
       const isDead = p.eliminated || p.health <= 0;
+      
+      const scoreText = this.currentGameMode === "ffa" ? `${p.score} KILLS` : (isDead ? "ELIMINATED" : `${p.health} HP`);
 
       html += `
         <div class="scoreboard-row" style="opacity: ${isDead ? 0.45 : 1.0}">
@@ -672,7 +679,7 @@ export class LobbyUI {
             <span class="scoreboard-dot" style="background-color: ${colorDef.hex}"></span>
             <span>${p.name} ${isMe ? "(You)" : ""}</span>
           </div>
-          <div class="scoreboard-score" style="color: ${colorDef.hex}">${isDead ? "ELIMINATED" : `${p.health} HP`}</div>
+          <div class="scoreboard-score" style="color: ${colorDef.hex}">${scoreText}</div>
         </div>
       `;
     });

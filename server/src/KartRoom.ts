@@ -5,6 +5,7 @@ import { createCode, registerCode, releaseCode } from "./roomCodes.js";
 export class KartRoom extends Room<KartRoomState> {
   maxClients = 10;
   private autoCountdownInterval: any = null;
+  private matchTimerInterval: any = null;
 
   onCreate(options: { roomCode?: string; code?: string; isPrivate?: boolean }) {
     this.setState(new KartRoomState());
@@ -201,20 +202,36 @@ export class KartRoom extends Room<KartRoomState> {
           target.health = Math.max(0, target.health - 35);
           console.log(`💥 ${target.name} hit by ${shooter?.name || "missile"}! Health: ${target.health}`);
 
-          if (target.health <= 0) {
-            target.eliminated = true;
-            if (shooter && shooter !== target) {
-              shooter.score += 1;
-            }
-            this.broadcast("playerEliminated", {
-              eliminatedId: target.id,
-              eliminatedName: target.name,
-              killerId: shooter?.id,
-              killerName: shooter?.name,
-            });
+            if (target.health <= 0) {
+              target.eliminated = true;
+              if (shooter && shooter !== target) {
+                shooter.score += 1;
+              }
+              this.broadcast("playerEliminated", {
+                eliminatedId: target.id,
+                eliminatedName: target.name,
+                killerId: shooter?.id,
+                killerName: shooter?.name,
+              });
 
-            this.checkVictoryCondition();
-          }
+              if (this.state.gameMode === "ffa") {
+                // FFA Respawn after 3 seconds
+                setTimeout(() => {
+                  if (this.state.matchPhase === "playing" && this.state.players.has(target.id)) {
+                    target.health = 100;
+                    target.eliminated = false;
+                    const isSideA = target.slotIndex % 2 === 0;
+                    const sideIdx = Math.floor(target.slotIndex / 2);
+                    target.x = isSideA ? -25 : 25;
+                    target.y = 40.0;
+                    target.z = (sideIdx - 2) * 8.5;
+                    target.yaw = isSideA ? Math.PI / 2 : -Math.PI / 2;
+                  }
+                }, 3000);
+              } else {
+                this.checkVictoryCondition();
+              }
+            }
         }
       }
     });
@@ -334,6 +351,9 @@ export class KartRoom extends Room<KartRoomState> {
     if (this.autoCountdownInterval) {
       clearInterval(this.autoCountdownInterval);
     }
+    if (this.matchTimerInterval) {
+      clearInterval(this.matchTimerInterval);
+    }
     console.log(`🧹 KartRoom [${this.roomId}] disposed`);
   }
 
@@ -369,8 +389,18 @@ export class KartRoom extends Room<KartRoomState> {
       if (this.state.countdownTimer <= 0) {
         clearInterval(this.autoCountdownInterval);
         this.state.matchPhase = "playing";
-        this.state.roundTimer = 180;
+        this.state.roundTimer = 300; // 5 minutes
         console.log(`🚀 Match started in room ${this.state.roomCode}!`);
+
+        if (this.matchTimerInterval) clearInterval(this.matchTimerInterval);
+        this.matchTimerInterval = setInterval(() => {
+          if (this.state.matchPhase === "playing") {
+            this.state.roundTimer -= 1;
+            if (this.state.roundTimer <= 0) {
+              this.endMatch();
+            }
+          }
+        }, 1000);
       }
     }, 1000);
   }
@@ -416,16 +446,29 @@ export class KartRoom extends Room<KartRoomState> {
           this.state.winningTeam = winner ? (winner.slotIndex < 5 ? "blue" : "red") : "";
         }
       }
-    } else {
-      const activePlayers = Array.from(this.state.players.values()).filter((p) => !p.eliminated);
-      if (activePlayers.length <= 1 && this.state.players.size >= 2) {
-        const winner = activePlayers[0];
-        this.state.matchPhase = "gameover";
-        this.state.winnerId = winner?.id || "";
-        this.state.winnerName = winner?.name || "No Winner";
-        this.state.winningTeam = "";
-        console.log(`🏆 Match Over! Winner: ${this.state.winnerName}`);
+    }
+  }
+
+  private endMatch() {
+    this.state.matchPhase = "gameover";
+    if (this.matchTimerInterval) clearInterval(this.matchTimerInterval);
+
+    if (this.state.gameMode === "ffa") {
+      let winner: KartPlayerState | null = null;
+      let maxScore = -1;
+      this.state.players.forEach(p => {
+        if (p.score > maxScore) {
+          maxScore = p.score;
+          winner = p;
+        }
+      });
+      if (winner) {
+        this.state.winnerId = winner.id;
+        this.state.winnerName = winner.name;
       }
+      console.log(`🏆 Match Over! Winner: ${this.state.winnerName} with ${maxScore} kills`);
+    } else {
+      this.checkVictoryCondition();
     }
   }
 
@@ -438,8 +481,12 @@ export class KartRoom extends Room<KartRoomState> {
     this.state.players.forEach((p) => {
       p.isReady = p.isHost;
       p.health = 100;
+      p.score = 0;
       p.eliminated = false;
     });
+    if (this.matchTimerInterval) {
+      clearInterval(this.matchTimerInterval);
+    }
     console.log(`🔄 Room ${this.state.roomCode} reset to lobby`);
   }
 }

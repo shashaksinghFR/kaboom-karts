@@ -115,9 +115,31 @@ export class HudOverlay {
     }
   }
 
+  public startRespawnCountdown(seconds: number): void {
+    const countdownEl = document.getElementById("shotdown-countdown");
+    if (!countdownEl) return;
+    
+    let remaining = seconds;
+    countdownEl.textContent = `RESPAWNING IN ${remaining}...`;
+    
+    const interval = setInterval(() => {
+      remaining -= 1;
+      if (remaining > 0) {
+        countdownEl.textContent = `RESPAWNING IN ${remaining}...`;
+      } else {
+        clearInterval(interval);
+      }
+    }, 1000);
+    
+    (this as any).respawnInterval = interval;
+  }
+
   public hideShotDownModal(): void {
     if (this.shotdownModal) {
       this.shotdownModal.style.display = "none";
+    }
+    if ((this as any).respawnInterval) {
+      clearInterval((this as any).respawnInterval);
     }
   }
 

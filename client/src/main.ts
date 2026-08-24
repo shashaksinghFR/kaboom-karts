@@ -224,7 +224,16 @@ window.addEventListener("DOMContentLoaded", async () => {
           prototypeScene.kartVisual.loadKartModel(chosenModel);
           prototypeScene.kartVisual.setVisible(true);
           hasSetInitialSpawn = true;
+        } else if (hasSetInitialSpawn && newPhase === "playing") {
+          // Check for respawn logic
+          const wasEliminated = (window as any)._localEliminatedState;
+          if (wasEliminated === true && !myPlayer.eliminated) {
+            hud.hideShotDownModal();
+            prototypeScene.setSpawnTransform(myPlayer.x, myPlayer.y, myPlayer.z, myPlayer.yaw);
+            prototypeScene.kartVisual.setVisible(true);
+          }
         }
+        (window as any)._localEliminatedState = myPlayer.eliminated;
       }
 
       // Synchronize remote opponents
@@ -250,9 +259,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       prototypeScene.kartVisual.setVisible(false);
       prototypeScene.weaponSystem.spawnExplosion(prototypeScene.kartController.position.clone());
       
-      // Instantly return to room (home)
-      networkClient.leaveRoom();
-      lobbyUI.showScreen("home");
+      hud.showShotDownModal(data.killerName || "Rival Racer");
+      hud.startRespawnCountdown(3);
     } else {
       // Instantly hide the enemy car on our screen
       prototypeScene.remoteKartManager.hideKart(data.eliminatedId);
