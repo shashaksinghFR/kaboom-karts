@@ -106,8 +106,8 @@ export class PrototypeScene {
     // 4. Initialize Remote Opponents Manager
     this.remoteKartManager = new RemoteKartManager(this.scene, this.shadowGenerator);
 
-    // 5. Initialize Weapon System (2.0s Cooldown)
-    this.weaponSystem = new WeaponSystem(this.scene, 2.0);
+    // 5. Initialize Weapon System (1.5s Cooldown)
+    this.weaponSystem = new WeaponSystem(this.scene, 1.5);
 
     // Load Model
     this.kartVisual.loadModel("/models/hoveringcar.glb");
@@ -117,11 +117,11 @@ export class PrototypeScene {
   }
 
   public setSpawnTransform(x: number, y: number, z: number, yaw: number): void {
-    this.kartController.position.set(x, 2.0, z); // Spawn slightly higher so they drop into the arena
+    this.kartController.position.set(x, y, z); 
     this.kartController.yaw = yaw;
     this.kartController.forwardSpeed = 0;
     this.kartController.lateralVelocity = 0;
-    this.kartVisual.rootNode.position.set(x, 2.0, z);
+    this.kartVisual.rootNode.position.set(x, y, z);
     this.kartVisual.rootNode.rotation.y = yaw;
   }
 
@@ -249,9 +249,8 @@ export class PrototypeScene {
   public getFloorHeight(x: number, z: number): number {
     if (!this.arenaLoaded || !this.arenaRoot) return 1000.0;
     
-    // Drop a ray from high up (but INSIDE the sky sphere) straight down to find the solid floor.
-    // 2000 units should be safely inside the sky sphere, but above the ground.
-    const ray = new BABYLON.Ray(new Vector3(x, 2000.0, z), new Vector3(0, -1, 0), 4000.0);
+    // Drop a ray from a reasonable height straight down to find the solid floor.
+    const ray = new BABYLON.Ray(new Vector3(x, 200.0, z), new Vector3(0, -1, 0), 400.0);
     const hit = this.scene.pickWithRay(ray, (mesh) => mesh.checkCollisions);
     if (hit && hit.hit && hit.pickedPoint) {
       return hit.pickedPoint.y;

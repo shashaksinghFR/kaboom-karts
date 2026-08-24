@@ -251,9 +251,20 @@ window.addEventListener("DOMContentLoaded", async () => {
       prototypeScene.kartVisual.setVisible(false);
       prototypeScene.weaponSystem.spawnExplosion(prototypeScene.kartController.position.clone());
       hud.showShotDownModal(data.killerName || "Rival Racer");
-    } else if (data.killerId === networkClient.localSessionId) {
-      // Local player shot down an opponent!
-      hud.showKillBanner(data.eliminatedName || "Rival");
+      
+      // Instantly return to room (home) after a 1.5s explosion delay
+      setTimeout(() => {
+        networkClient.leaveRoom();
+        lobbyUI.showScreen("home");
+      }, 1500);
+    } else {
+      // Instantly hide the enemy car on our screen
+      prototypeScene.remoteKartManager.hideKart(data.eliminatedId);
+      
+      if (data.killerId === networkClient.localSessionId) {
+        // Local player shot down an opponent!
+        hud.showKillBanner(data.eliminatedName || "Rival");
+      }
     }
   };
 

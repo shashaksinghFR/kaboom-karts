@@ -19,9 +19,9 @@ export class CameraController {
   private chaseCamera: ArcRotateCamera;
   private currentMode: CameraMode = CameraMode.CHASE;
 
-  // Fixed camera distance and height (adjusted to be closer and lower to ground for better sense of speed)
-  public distanceBehind: number = 4.2;
-  public heightAbove: number = 1.1;
+  // Fixed camera distance and height (adjusted to be higher up)
+  public distanceBehind: number = 6.5;
+  public heightAbove: number = 2.5;
   public lookAheadOffset: number = 2.0;
   public rotationLerpSpeed: number = 14.0;
 
@@ -85,15 +85,15 @@ export class CameraController {
       "ChaseCamera",
       -Math.PI / 2, // alpha
       Math.PI / 3.2, // beta
-      this.distanceBehind, // radius
+      6.5, // radius
       Vector3.Zero(),
       this.scene
     );
     this.chaseCamera.fov = 1.0;
     this.chaseCamera.minZ = 0.1;
     this.chaseCamera.maxZ = 80000;
-    this.chaseCamera.lowerRadiusLimit = this.distanceBehind;
-    this.chaseCamera.upperRadiusLimit = this.distanceBehind;
+    this.chaseCamera.lowerRadiusLimit = 4.0;
+    this.chaseCamera.upperRadiusLimit = 12.0;
     this.chaseCamera.lowerBetaLimit = 0.05;
     this.chaseCamera.upperBetaLimit = Math.PI / 2.1;
 
@@ -211,7 +211,7 @@ export class CameraController {
       this.freeLookTimer += dt;
       if (this.freeLookTimer > 1.0) {
         let targetAlpha = -kart.yaw - Math.PI / 2;
-        let targetBeta = Math.PI / 2.3;
+        let targetBeta = Math.PI / 3.2;
 
         let currentAlpha = this.chaseCamera.alpha;
         while (currentAlpha - targetAlpha > Math.PI) targetAlpha += Math.PI * 2;

@@ -73,6 +73,13 @@ export class RemoteKartManager {
     });
   }
 
+  public hideKart(sessionId: string): void {
+    const kart = this.remoteKarts.get(sessionId);
+    if (kart) {
+      kart.setVisible(false);
+    }
+  }
+
   public handleMissileFired(data: {
     id: string;
     ownerSessionId: string;
