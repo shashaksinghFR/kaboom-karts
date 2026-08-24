@@ -290,15 +290,15 @@ export class KartRoom extends Room<KartRoomState> {
     if (this.state.gameMode === "team") {
       const isBlue = slotIndex < 5;
       const teamIdx = isBlue ? slotIndex : slotIndex - 5;
-      player.x = isBlue ? -35 : 35; // Opposite ends on X axis
-      player.y = 0.5;
-      player.z = (teamIdx - 2) * 8; // Spread along Z axis
+      player.x = isBlue ? -25 : 25; // Opposite ends on X axis
+      player.y = 40.0;
+      player.z = (teamIdx - 2) * 6.5; // Spread along Z axis
       player.yaw = isBlue ? Math.PI / 2 : -Math.PI / 2; // Face the center
     } else {
       // FFA: Half on one end, half on the other end, facing center
-      player.x = isSideA ? -35 : 35;
-      player.y = 0.5;
-      player.z = (sideIdx - 2) * 10; // Spread along Z axis
+      player.x = isSideA ? -25 : 25;
+      player.y = 40.0;
+      player.z = (sideIdx - 2) * 8.5; // Spread along Z axis
       player.yaw = isSideA ? Math.PI / 2 : -Math.PI / 2; // Face the center
     }
 
@@ -351,15 +351,15 @@ export class KartRoom extends Room<KartRoomState> {
       if (this.state.gameMode === "team") {
         const isBlue = p.slotIndex < 5;
         const teamIdx = isBlue ? p.slotIndex : p.slotIndex - 5;
-        p.x = isBlue ? -35 : 35; // Opposite ends on X axis
-        p.y = 0.5;
-        p.z = (teamIdx - 2) * 8; // Spread along Z axis
+        p.x = isBlue ? -25 : 25; // Opposite ends on X axis
+        p.y = 40.0;
+        p.z = (teamIdx - 2) * 6.5; // Spread along Z axis
         p.yaw = isBlue ? Math.PI / 2 : -Math.PI / 2; // Face the center
       } else {
         // FFA: Half on one end, half on the other end, facing center
-        p.x = isSideA ? -35 : 35;
-        p.y = 0.5;
-        p.z = (sideIdx - 2) * 10; // Spread along Z axis
+        p.x = isSideA ? -25 : 25;
+        p.y = 40.0;
+        p.z = (sideIdx - 2) * 8.5; // Spread along Z axis
         p.yaw = isSideA ? Math.PI / 2 : -Math.PI / 2; // Face the center
       }
     });

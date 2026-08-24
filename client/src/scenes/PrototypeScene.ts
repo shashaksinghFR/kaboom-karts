@@ -208,8 +208,8 @@ export class PrototypeScene {
             this.arenaRoot = rootNode;
 
             // The user requested the arena to be massive but not too big
-            // Reduced to 12.6 scale as requested (reduced by 20%)
-            const ARENA_SCALE = 12.6;
+            // Reduced by another 15% per user request (from 12.6 -> 10.71)
+            const ARENA_SCALE = 10.71;
             rootNode.scaling.scaleInPlace(ARENA_SCALE);
 
            // Ensure transformations are applied to children for correct physics collisions

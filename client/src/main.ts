@@ -216,9 +216,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       const myPlayer = state.players.get(networkClient.localSessionId);
       if (myPlayer) {
         if (!hasSetInitialSpawn && !isArenaDeploying && (newPhase === "countdown" || newPhase === "playing")) {
-          // Find the precise floor height using raycasting!
-          const floorY = prototypeScene.getFloorHeight(myPlayer.x, myPlayer.z);
-          prototypeScene.setSpawnTransform(myPlayer.x, floorY + 2.0, myPlayer.z, myPlayer.yaw);
+          // Drop players from the sky so they fall onto the arena mesh using physics, avoiding spawning inside ramps
+          prototypeScene.setSpawnTransform(myPlayer.x, 40.0, myPlayer.z, myPlayer.yaw);
           
           prototypeScene.kartVisual.setPlayerColor(myPlayer.colorIndex, myPlayer.team);
           const chosenModel = myPlayer.kartModelIndex ?? myPlayer.slotIndex ?? 0;
