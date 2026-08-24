@@ -454,7 +454,7 @@ export class KartRoom extends Room<KartRoomState> {
     if (this.matchTimerInterval) clearInterval(this.matchTimerInterval);
 
     if (this.state.gameMode === "ffa") {
-      let winner: KartPlayerState | null = null;
+      let winner: any = null;
       let maxScore = -1;
       this.state.players.forEach(p => {
         if (p.score > maxScore) {
